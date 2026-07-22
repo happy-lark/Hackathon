@@ -1,5 +1,5 @@
-#페이지 이동과 초기화 담당
 import streamlit as st
+
 
 def go_to_page(page_name):
     """

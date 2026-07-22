@@ -1,19 +1,16 @@
 import streamlit as st
 from PIL import Image
 
-from analysis.color_analyzer import (
-    analyze_personal_color
-)
+from analysis.analyzer import analyze_face_persona
 from utils.navigation import (
     go_to_page,
     reset_analysis
 )
 
 
-def show_personal_color_page():
-
+def show_upload_page():
     st.markdown(
-        '<div class="step-text">PERSONAL COLOR ANALYSIS</div>',
+        '<div class="step-text">STEP 3 OF 3</div>',
         unsafe_allow_html=True
     )
 
@@ -29,8 +26,7 @@ def show_personal_color_page():
     st.markdown(
         """
         <div class="page-description">
-            정면 얼굴 사진을 업로드하면
-            피부색을 기반으로 퍼스널 컬러를 분석합니다.
+            한 사람의 얼굴이 선명하게 보이는 사진을 업로드해주세요.
         </div>
         """,
         unsafe_allow_html=True
@@ -40,10 +36,10 @@ def show_personal_color_page():
         """
         <div class="info-card">
             📸 권장 사진 조건<br>
-            · 자연광에서 촬영한 사진<br>
+            · 얼굴이 정면에 가까운 사진<br>
             · 한 사람만 포함된 사진<br>
-            · 이마와 양 볼이 잘 보이는 사진<br>
-            · 필터가 적용되지 않은 사진
+            · 눈, 코, 입이 가려지지 않은 사진<br>
+            · 얼굴이 너무 작지 않은 사진
         </div>
         """,
         unsafe_allow_html=True
@@ -53,13 +49,11 @@ def show_personal_color_page():
         "Upload your photo",
         type=["jpg", "jpeg", "png"],
         label_visibility="collapsed",
-        key="personal_color_uploader"
+        key="photo_uploader"
     )
 
     if uploaded_file is not None:
-
         try:
-
             image = Image.open(
                 uploaded_file
             ).convert("RGB")
@@ -69,22 +63,20 @@ def show_personal_color_page():
             ] = image
 
         except Exception:
-
             st.session_state.pop(
                 "uploaded_image",
                 None
             )
 
             st.error(
-                "이미지를 열 수 없습니다."
+                "이미지 파일을 열 수 없습니다. "
+                "JPG, JPEG 또는 PNG 형식의 "
+                "정상적인 파일을 업로드해주세요."
             )
 
     if "uploaded_image" in st.session_state:
-
         st.image(
-            st.session_state[
-                "uploaded_image"
-            ],
+            st.session_state["uploaded_image"],
             caption="Uploaded Photo",
             use_container_width=True
         )
@@ -96,20 +88,15 @@ def show_personal_color_page():
     )
 
     with back_column:
-
         if st.button(
             "← Back",
             use_container_width=True
         ):
-
-            go_to_page(
-                "analysis_type"
-            )
+            go_to_page("target")
 
     with analyze_column:
-
         analyze_clicked = st.button(
-            "Analyze 🎨",
+            "Analyze ✨",
             type="primary",
             use_container_width=True,
             disabled=(
@@ -119,47 +106,38 @@ def show_personal_color_page():
         )
 
     if analyze_clicked:
-
         image = st.session_state[
             "uploaded_image"
         ]
 
         with st.spinner(
-            "Analyzing personal color..."
+            "Analyzing facial expression "
+            "and visual impression..."
         ):
-
-            analysis_result = analyze_personal_color(
+            analysis_result = analyze_face_persona(
                 image
             )
 
         if analysis_result["success"]:
-
             st.session_state[
-                "color_analysis_result"
+                "analysis_result"
             ] = analysis_result
 
-            go_to_page(
-                "result"
-            )
+            go_to_page("result")
 
         else:
-
             st.session_state.pop(
-                "color_analysis_result",
+                "analysis_result",
                 None
             )
 
             st.error(
-                analysis_result[
-                    "message"
-                ]
+                analysis_result["message"]
             )
 
     if st.button(
         "Clear uploaded photo",
         use_container_width=True
     ):
-
         reset_analysis()
-
         st.rerun()

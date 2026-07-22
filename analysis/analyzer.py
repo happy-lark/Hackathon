@@ -1,4 +1,3 @@
-# MediaPipe로 얼굴 분석
 from pathlib import Path
 import urllib.request
 
@@ -59,7 +58,7 @@ def create_face_landmarker():
         ),
         running_mode=mp.tasks.vision.RunningMode.IMAGE,
 
-        # 여러 명의 얼굴이 있는지 확인하기 위해 최대 2명 감지
+        # 여러 명 감지 여부를 확인하기 위해 최대 2명
         num_faces=2,
 
         # 표정 관련 blendshape 값 출력
@@ -77,7 +76,7 @@ def create_face_landmarker():
 
 def get_blendshape_score(blendshapes, name):
     """
-    MediaPipe blendshape 결과에서 원하는 항목의 점수를 찾습니다.
+    MediaPipe blendshape 결과에서 원하는 항목을 찾습니다.
     """
 
     for item in blendshapes:
@@ -129,8 +128,7 @@ def calculate_frontality(landmarks):
 
 def calculate_head_level(landmarks):
     """
-    양쪽 눈의 높이 차이를 이용해
-    고개가 얼마나 수평인지 측정합니다.
+    양쪽 눈의 높이 차이로 고개 기울기를 측정합니다.
     """
 
     left_eye = landmarks[33]
@@ -223,100 +221,6 @@ def check_face_size(landmarks):
     )
 
 
-def detect_single_face(image: Image.Image):
-    """
-    이미지에서 한 사람의 얼굴을 검출하고
-    이미지 배열, 랜드마크, 표정 데이터를 반환합니다.
-
-    Persona 분석과 Personal Color 분석에서
-    공통으로 사용하는 함수입니다.
-    """
-
-    if image is None:
-        return {
-            "success": False,
-            "message": (
-                "분석할 이미지가 없습니다. "
-                "사진을 먼저 업로드해주세요."
-            )
-        }
-
-    try:
-        image = image.convert("RGB")
-        image_array = np.asarray(image)
-
-        # 일부 이미지에서 배열이 읽기 전용이 되는 문제 방지
-        image_array = np.ascontiguousarray(
-            image_array
-        )
-
-        mp_image = mp.Image(
-            image_format=mp.ImageFormat.SRGB,
-            data=image_array
-        )
-
-        landmarker = create_face_landmarker()
-        result = landmarker.detect(mp_image)
-
-    except Exception as error:
-        return {
-            "success": False,
-            "message": (
-                "사진을 분석하는 중 오류가 발생했습니다. "
-                "JPG, JPEG 또는 PNG 형식의 다른 사진을 "
-                "사용해주세요."
-            ),
-            "error": str(error)
-        }
-
-    # 얼굴이 감지되지 않은 경우
-    if not result.face_landmarks:
-        return {
-            "success": False,
-            "message": (
-                "얼굴을 감지하지 못했습니다. "
-                "사람의 얼굴이 선명하게 보이는 정면 사진을 "
-                "업로드해주세요."
-            )
-        }
-
-    # 여러 명의 얼굴이 감지된 경우
-    if len(result.face_landmarks) > 1:
-        return {
-            "success": False,
-            "message": (
-                "여러 명의 얼굴이 감지되었습니다. "
-                "한 사람의 얼굴만 포함된 사진을 "
-                "업로드해주세요."
-            )
-        }
-
-    landmarks = result.face_landmarks[0]
-
-    # 얼굴이 사진에서 너무 작게 나온 경우
-    if not check_face_size(landmarks):
-        return {
-            "success": False,
-            "message": (
-                "사진 속 얼굴이 너무 작습니다. "
-                "얼굴이 화면에 더 크게 보이는 사진을 "
-                "업로드해주세요."
-            )
-        }
-
-    blendshapes = None
-
-    if result.face_blendshapes:
-        blendshapes = result.face_blendshapes[0]
-
-    return {
-        "success": True,
-        "image_array": image_array,
-        "landmarks": landmarks,
-        "blendshapes": blendshapes
-    }
-
-
 def normalize_persona(persona_scores):
     """
     네 Persona 점수의 합을 100으로 정규화합니다.
@@ -354,24 +258,68 @@ def analyze_face_persona(image: Image.Image):
     - Face Centering
     """
 
-    # 공통 얼굴 검출 함수 사용
-    face_result = detect_single_face(
-        image
-    )
+    try:
+        image = image.convert("RGB")
+        image_array = np.asarray(image)
 
-    if not face_result["success"]:
-        return face_result
+        # 일부 이미지에서 배열이 읽기 전용이 되는 문제 방지
+        image_array = np.ascontiguousarray(
+            image_array
+        )
 
-    landmarks = face_result[
-        "landmarks"
-    ]
+        mp_image = mp.Image(
+            image_format=mp.ImageFormat.SRGB,
+            data=image_array
+        )
 
-    blendshapes = face_result[
-        "blendshapes"
-    ]
+        landmarker = create_face_landmarker()
+        result = landmarker.detect(mp_image)
 
-    # Persona 분석에는 표정 데이터가 필요함
-    if blendshapes is None:
+    except Exception as error:
+        return {
+            "success": False,
+            "message": (
+                "사진을 분석하는 중 오류가 발생했습니다. "
+                "JPG, JPEG 또는 PNG 형식의 다른 사진을 사용해주세요."
+            ),
+            "error": str(error)
+        }
+
+    # 얼굴 없음
+    if not result.face_landmarks:
+        return {
+            "success": False,
+            "message": (
+                "얼굴을 감지하지 못했습니다. "
+                "사람의 얼굴이 선명하게 보이는 정면 사진을 "
+                "업로드해주세요."
+            )
+        }
+
+    # 여러 명
+    if len(result.face_landmarks) > 1:
+        return {
+            "success": False,
+            "message": (
+                "여러 명의 얼굴이 감지되었습니다. "
+                "한 사람의 얼굴만 포함된 사진을 업로드해주세요."
+            )
+        }
+
+    landmarks = result.face_landmarks[0]
+
+    # 얼굴 너무 작음
+    if not check_face_size(landmarks):
+        return {
+            "success": False,
+            "message": (
+                "사진 속 얼굴이 너무 작습니다. "
+                "얼굴이 화면에 더 크게 보이는 사진을 업로드해주세요."
+            )
+        }
+
+    # 표정 분석 실패
+    if not result.face_blendshapes:
         return {
             "success": False,
             "message": (
@@ -381,10 +329,9 @@ def analyze_face_persona(image: Image.Image):
             )
         }
 
-    # ------------------------------------------------
-    # 표정 관련 MediaPipe 원본 값
-    # ------------------------------------------------
+    blendshapes = result.face_blendshapes[0]
 
+    # 표정 관련 원본 값
     smile_left = get_blendshape_score(
         blendshapes,
         "mouthSmileLeft"
@@ -444,10 +391,7 @@ def analyze_face_persona(image: Image.Image):
     )
 
     features = {
-        "Smile": round(
-            clamp(smile),
-            1
-        ),
+        "Smile": round(clamp(smile), 1),
         "Eye Openness": round(
             clamp(eye_openness),
             1
