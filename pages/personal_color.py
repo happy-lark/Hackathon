@@ -1,9 +1,15 @@
 import streamlit as st
 
-from analysis.color_analyzer import (
-    analyze_personal_color
-)
+from analysis.color_analyzer import analyze_personal_color
 from utils.navigation import go_to_page
+
+
+PALETTE_IMAGES = {
+    "Spring Warm": "assets/springwarm.png",
+    "Summer Cool": "assets/summercool.png",
+    "Autumn Warm": "assets/autumnwarm.png",
+    "Winter Cool": "assets/wintercool.png"
+}
 
 
 def show_personal_color_page():
@@ -27,21 +33,18 @@ def show_personal_color_page():
     )
 
     if "uploaded_image" not in st.session_state:
-        st.warning(
-            "업로드된 사진이 없습니다."
-        )
+        st.warning("업로드된 사진이 없습니다.")
 
         if st.button(
             "← Upload Page",
-            use_container_width=True
+            use_container_width=True,
+            key="no_image_back"
         ):
             go_to_page("upload")
 
         return
 
-    image = st.session_state[
-        "uploaded_image"
-    ]
+    image = st.session_state["uploaded_image"]
 
     st.image(
         image,
@@ -50,13 +53,11 @@ def show_personal_color_page():
     )
 
     st.info(
-        "자연광에서 촬영한 무필터 사진을 "
-        "사용하면 더 안정적인 결과를 얻을 수 있습니다."
+        "자연광에서 촬영한 무필터 사진을 사용하면 "
+        "더 안정적인 결과를 얻을 수 있습니다."
     )
 
-    back_column, analyze_column = st.columns(
-        2
-    )
+    back_column, analyze_column = st.columns(2)
 
     with back_column:
         if st.button(
@@ -78,9 +79,7 @@ def show_personal_color_page():
         with st.spinner(
             "Analyzing skin tone and color..."
         ):
-            result = analyze_personal_color(
-                image
-            )
+            result = analyze_personal_color(image)
 
         if result["success"]:
             st.session_state[
@@ -93,9 +92,7 @@ def show_personal_color_page():
                 None
             )
 
-            st.error(
-                result["message"]
-            )
+            st.error(result["message"])
 
     result = st.session_state.get(
         "color_analysis_result"
@@ -108,19 +105,47 @@ def show_personal_color_page():
             f'🎨 {result["season"]}'
         )
 
-        st.metric(
-            "Undertone",
-            result["undertone"]
+        palette_path = PALETTE_IMAGES.get(
+            result["season"]
         )
 
-        st.metric(
-            "Estimated Confidence",
-            f'{result["confidence"]}%'
-        )
+        if palette_path is not None:
+            try:
+                st.image(
+                    palette_path,
+                    caption=(
+                        f'{result["season"]} '
+                        "Color Palette"
+                    ),
+                    use_container_width=True
+                )
 
-        st.write(
-            result["description"]
-        )
+            except Exception as error:
+                st.error(
+                    "팔레트 이미지를 불러오지 못했습니다."
+                )
+                st.code(str(error))
+
+        else:
+            st.warning(
+                "분석 결과와 일치하는 팔레트가 없습니다."
+            )
+
+        metric_column1, metric_column2 = st.columns(2)
+
+        with metric_column1:
+            st.metric(
+                "Undertone",
+                result["undertone"]
+            )
+
+        with metric_column2:
+            st.metric(
+                "Estimated Confidence",
+                f'{result["confidence"]}%'
+            )
+
+        st.write(result["description"])
 
         st.markdown(
             "#### Recommended Colors"
@@ -128,9 +153,7 @@ def show_personal_color_page():
 
         st.write(
             " · ".join(
-                result[
-                    "recommended_colors"
-                ]
+                result["recommended_colors"]
             )
         )
 
