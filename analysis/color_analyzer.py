@@ -1,421 +1,455 @@
-import cv2
+import colorsys
+
+import mediapipe as mp
 import numpy as np
 from PIL import Image
 
-from analysis.analyzer import detect_single_face
-
-# 피부색을 추출할 얼굴 랜드마크
-# 입술·눈 화장 영향을 피하고 이마와 양 볼을 사용
-SKIN_LANDMARK_INDICES = {
-    "forehead": 10,
-    "left_cheek": 50,
-    "right_cheek": 280
-}
+from analysis.analyzer import (
+    check_face_size,
+    clamp,
+    create_face_landmarker
+)
 
 
-def clamp(value, minimum=0.0, maximum=100.0):
+def get_face_bounds(landmarks, width, height):
     """
-    값을 지정된 범위 안으로 제한합니다.
-    """
-    return max(minimum, min(maximum, value))
-
-
-def get_face_width_pixels(landmarks, image_width):
-    """
-    얼굴의 가로 길이를 픽셀 단위로 계산합니다.
+    얼굴 랜드마크를 기준으로 얼굴 영역의 좌표를 구합니다.
     """
 
     x_values = [
-        landmark.x
+        landmark.x * width
         for landmark in landmarks
     ]
 
-    normalized_width = (
-        max(x_values) - min(x_values)
-    )
-
-    return normalized_width * image_width
-
-
-def extract_landmark_patch(
-    image_array,
-    landmark,
-    patch_radius
-):
-    """
-    특정 랜드마크 주변의 정사각형 이미지 영역을 추출합니다.
-    """
-
-    image_height, image_width, _ = image_array.shape
-
-    center_x = int(
-        landmark.x * image_width
-    )
-
-    center_y = int(
-        landmark.y * image_height
-    )
-
-    x1 = max(
-        0,
-        center_x - patch_radius
-    )
-
-    x2 = min(
-        image_width,
-        center_x + patch_radius
-    )
-
-    y1 = max(
-        0,
-        center_y - patch_radius
-    )
-
-    y2 = min(
-        image_height,
-        center_y + patch_radius
-    )
-
-    return image_array[
-        y1:y2,
-        x1:x2
+    y_values = [
+        landmark.y * height
+        for landmark in landmarks
     ]
 
+    left = max(
+        0,
+        int(min(x_values))
+    )
 
-def filter_skin_pixels(region_rgb):
+    right = min(
+        width,
+        int(max(x_values))
+    )
+
+    top = max(
+        0,
+        int(min(y_values))
+    )
+
+    bottom = min(
+        height,
+        int(max(y_values))
+    )
+
+    return left, top, right, bottom
+
+
+def extract_cheek_regions(
+    image_array,
+    face_bounds
+):
     """
-    YCrCb 색공간을 사용해 피부색 후보 픽셀만 추출합니다.
+    얼굴 영역 안에서 왼쪽과 오른쪽 볼 부분을 추출합니다.
+
+    눈, 입술, 머리카락의 영향을 줄이기 위해
+    얼굴 중앙 아래쪽의 작은 영역만 사용합니다.
     """
 
-    if region_rgb.size == 0:
-        return np.empty(
-            (0, 3),
-            dtype=np.uint8
+    left, top, right, bottom = face_bounds
+
+    face_width = right - left
+    face_height = bottom - top
+
+    if face_width <= 0 or face_height <= 0:
+        return []
+
+    cheek_width = max(
+        4,
+        int(face_width * 0.14)
+    )
+
+    cheek_height = max(
+        4,
+        int(face_height * 0.12)
+    )
+
+    cheek_y = int(
+        top + face_height * 0.57
+    )
+
+    left_cheek_x = int(
+        left + face_width * 0.31
+    )
+
+    right_cheek_x = int(
+        left + face_width * 0.69
+    )
+
+    cheek_regions = []
+
+    for center_x in [
+        left_cheek_x,
+        right_cheek_x
+    ]:
+        x1 = max(
+            0,
+            center_x - cheek_width // 2
         )
 
-    region_ycrcb = cv2.cvtColor(
-        region_rgb,
-        cv2.COLOR_RGB2YCrCb
-    )
+        x2 = min(
+            image_array.shape[1],
+            center_x + cheek_width // 2
+        )
 
-    lower_skin = np.array(
-        [0, 133, 77],
-        dtype=np.uint8
-    )
+        y1 = max(
+            0,
+            cheek_y - cheek_height // 2
+        )
 
-    upper_skin = np.array(
-        [255, 173, 127],
-        dtype=np.uint8
-    )
+        y2 = min(
+            image_array.shape[0],
+            cheek_y + cheek_height // 2
+        )
 
-    skin_mask = cv2.inRange(
-        region_ycrcb,
-        lower_skin,
-        upper_skin
-    )
-
-    return region_rgb[
-        skin_mask > 0
-    ]
-
-
-def extract_face_skin_pixels(
-    image_array,
-    landmarks
-):
-    """
-    이마와 양 볼 주변에서 피부색 후보 픽셀을 추출합니다.
-    """
-
-    _, image_width, _ = image_array.shape
-
-    face_width = get_face_width_pixels(
-        landmarks,
-        image_width
-    )
-
-    # 사진 크기에 따라 피부 샘플 영역 크기를 조정
-    patch_radius = max(
-        4,
-        int(face_width * 0.04)
-    )
-
-    extracted_pixels = []
-
-    for landmark_index in SKIN_LANDMARK_INDICES.values():
-        landmark = landmarks[
-            landmark_index
+        region = image_array[
+            y1:y2,
+            x1:x2
         ]
 
-        patch = extract_landmark_patch(
-            image_array,
-            landmark,
-            patch_radius
-        )
+        if region.size > 0:
+            cheek_regions.append(region)
 
-        skin_pixels = filter_skin_pixels(
-            patch
-        )
+    return cheek_regions
 
-        if len(skin_pixels) > 0:
-            extracted_pixels.append(
-                skin_pixels
-            )
 
-    if not extracted_pixels:
-        return np.empty(
-            (0, 3),
-            dtype=np.uint8
-        )
+def calculate_skin_color(cheek_regions):
+    """
+    볼 영역에서 피부색의 대표 RGB 값을 계산합니다.
 
-    return np.concatenate(
-        extracted_pixels,
+    평균값보다 조명 반사와 그림자의 영향을 덜 받도록
+    중앙값을 사용합니다.
+    """
+
+    if not cheek_regions:
+        return None
+
+    pixels = np.concatenate(
+        [
+            region.reshape(-1, 3)
+            for region in cheek_regions
+        ],
         axis=0
+    ).astype(np.float32)
+
+    # 지나치게 어둡거나 밝은 픽셀 제거
+    brightness = pixels.mean(
+        axis=1
     )
 
+    valid_pixels = pixels[
+        (brightness > 35)
+        & (brightness < 245)
+    ]
 
-def calculate_color_features(skin_pixels):
-    """
-    피부 픽셀에서 RGB, HSV, Lab 특징을 계산합니다.
-    """
+    if len(valid_pixels) < 10:
+        valid_pixels = pixels
 
-    # 극단적인 조명 픽셀의 영향을 줄이기 위해 중앙값 사용
     median_rgb = np.median(
-        skin_pixels,
+        valid_pixels,
         axis=0
-    )
-
-    pixel_array = skin_pixels.reshape(
-        -1,
-        1,
-        3
-    ).astype(np.uint8)
-
-    hsv_pixels = cv2.cvtColor(
-        pixel_array,
-        cv2.COLOR_RGB2HSV
-    ).reshape(-1, 3)
-
-    lab_pixels = cv2.cvtColor(
-        pixel_array,
-        cv2.COLOR_RGB2LAB
-    ).reshape(-1, 3)
-
-    median_hsv = np.median(
-        hsv_pixels,
-        axis=0
-    )
-
-    median_lab = np.median(
-        lab_pixels,
-        axis=0
-    )
-
-    red, green, blue = median_rgb
-    hue, saturation, value = median_hsv
-    lightness, a_value, b_value = median_lab
-
-    # OpenCV Lab에서는 a와 b의 중립점이 128
-    lab_a = float(a_value) - 128
-    lab_b = float(b_value) - 128
-
-    warmth_score = (
-        50
-        + lab_b * 1.2
-        + (
-            float(red) - float(blue)
-        ) * 0.25
-    )
-
-    brightness_score = (
-        float(value)
-        / 255
-        * 100
-    )
-
-    saturation_score = (
-        float(saturation)
-        / 255
-        * 100
     )
 
     return {
-        "average_rgb": {
-            "r": int(red),
-            "g": int(green),
-            "b": int(blue)
-        },
-        "warmth_score": round(
-            clamp(warmth_score),
+        "r": float(median_rgb[0]),
+        "g": float(median_rgb[1]),
+        "b": float(median_rgb[2])
+    }
+
+
+def calculate_color_features(skin_color):
+    """
+    대표 피부색을 이용해 밝기, 채도, 웜/쿨 지표를 계산합니다.
+    """
+
+    red = skin_color["r"]
+    green = skin_color["g"]
+    blue = skin_color["b"]
+
+    normalized_rgb = (
+        red / 255,
+        green / 255,
+        blue / 255
+    )
+
+    hue, saturation, value = colorsys.rgb_to_hsv(
+        *normalized_rgb
+    )
+
+    # 붉은색과 노란색 계열이 강할수록 높아지는 단순 지표
+    warmth = (
+        (red - blue) * 0.65
+        + (green - blue) * 0.35
+    )
+
+    brightness = (
+        red * 0.299
+        + green * 0.587
+        + blue * 0.114
+    )
+
+    return {
+        "Red": round(red, 1),
+        "Green": round(green, 1),
+        "Blue": round(blue, 1),
+        "Brightness": round(
+            clamp(
+                brightness / 255 * 100
+            ),
             1
         ),
-        "brightness_score": round(
-            clamp(brightness_score),
+        "Saturation": round(
+            clamp(
+                saturation * 100
+            ),
             1
         ),
-        "saturation_score": round(
-            clamp(saturation_score),
+        "Warmth": round(
+            warmth,
             1
         ),
-        "lab": {
-            "l": round(
-                float(lightness),
-                1
-            ),
-            "a": round(
-                lab_a,
-                1
-            ),
-            "b": round(
-                lab_b,
-                1
-            )
-        },
-        "hsv": {
-            "h": round(
-                float(hue),
-                1
-            ),
-            "s": round(
-                float(saturation),
-                1
-            ),
-            "v": round(
-                float(value),
-                1
-            )
-        }
+        "Hue": round(
+            hue * 360,
+            1
+        )
     }
 
 
 def classify_personal_color(features):
     """
-    온도감, 밝기, 채도를 이용해
-    간이 퍼스널 컬러 계절 타입을 추정합니다.
+    색상 특징을 기반으로 계절 타입을 추정합니다.
+
+    Warm + Bright  -> Spring
+    Warm + Deep    -> Autumn
+    Cool + Bright  -> Summer
+    Cool + Deep    -> Winter
     """
 
-    warmth = features[
-        "warmth_score"
-    ]
-
     brightness = features[
-        "brightness_score"
+        "Brightness"
     ]
 
     saturation = features[
-        "saturation_score"
+        "Saturation"
     ]
 
-    is_warm = warmth >= 50
-    is_bright = brightness >= 65
-    is_clear = saturation >= 25
+    warmth = features[
+        "Warmth"
+    ]
 
-    if is_warm and (is_bright or is_clear):
+    is_warm = warmth >= 18
+    is_bright = brightness >= 62
+
+    if is_warm and is_bright:
         season = "Spring Warm"
+        undertone = "Warm"
         description = (
-            "밝고 생기 있는 따뜻한 계열의 색상이 "
-            "잘 어울릴 가능성이 높습니다."
+            "밝고 생기 있는 따뜻한 색상이 "
+            "잘 어울릴 가능성이 있습니다."
         )
+
         recommended_colors = [
-            {"name": "Coral", "hex": "#FF7F6A"},
-            {"name": "Peach", "hex": "#FFB38A"},
-            {"name": "Warm Ivory", "hex": "#FFF3D6"},
-            {"name": "Fresh Green", "hex": "#8DBF67"},
-            {"name": "Light Camel", "hex": "#C99A6B"}
+            "Coral",
+            "Peach",
+            "Ivory",
+            "Warm Beige",
+            "Light Camel"
         ]
 
-    elif is_warm:
+    elif is_warm and not is_bright:
         season = "Autumn Warm"
+        undertone = "Warm"
         description = (
-            "차분하고 깊이 있는 따뜻한 계열의 색상이 "
-            "잘 어울릴 가능성이 높습니다."
+            "차분하고 깊이 있는 따뜻한 색상이 "
+            "잘 어울릴 가능성이 있습니다."
         )
+
         recommended_colors = [
-            {"name": "Terracotta", "hex": "#B85C43"},
-            {"name": "Olive", "hex": "#7A7B3A"},
-            {"name": "Camel", "hex": "#B88655"},
-            {"name": "Mustard", "hex": "#C99728"},
-            {"name": "Chocolate", "hex": "#5C3428"}
+            "Terracotta",
+            "Olive",
+            "Camel",
+            "Mustard",
+            "Chocolate Brown"
         ]
 
-    elif is_bright and not is_clear:
+    elif not is_warm and is_bright:
         season = "Summer Cool"
+        undertone = "Cool"
         description = (
-            "부드럽고 밝은 차가운 계열의 색상이 "
-            "잘 어울릴 가능성이 높습니다."
+            "부드럽고 맑은 차가운 색상이 "
+            "잘 어울릴 가능성이 있습니다."
         )
+
         recommended_colors = [
-            {"name": "Dusty Rose", "hex": "#C58D9B"},
-            {"name": "Lavender", "hex": "#B8A6D9"},
-            {"name": "Powder Blue", "hex": "#AFCBE3"},
-            {"name": "Soft Navy", "hex": "#596A8A"},
-            {"name": "Cool Gray", "hex": "#A7A9B0"}
+            "Lavender",
+            "Rose Pink",
+            "Sky Blue",
+            "Soft Navy",
+            "Cool Gray"
         ]
 
     else:
         season = "Winter Cool"
+        undertone = "Cool"
         description = (
-            "선명하고 대비감 있는 차가운 계열의 색상이 "
-            "잘 어울릴 가능성이 높습니다."
+            "선명하고 대비가 강한 차가운 색상이 "
+            "잘 어울릴 가능성이 있습니다."
         )
+
         recommended_colors = [
-            {"name": "Royal Blue", "hex": "#3154C8"},
-            {"name": "Fuchsia", "hex": "#D42A86"},
-            {"name": "Emerald", "hex": "#00896F"},
-            {"name": "Pure White", "hex": "#FFFFFF"},
-            {"name": "Black", "hex": "#111111"}
+            "Black",
+            "Pure White",
+            "Cobalt Blue",
+            "Burgundy",
+            "Emerald"
         ]
+
+    confidence = (
+        abs(warmth - 18) * 1.2
+        + abs(brightness - 62) * 0.6
+        + saturation * 0.15
+    )
+
+    confidence = round(
+        clamp(
+            50 + confidence,
+            50,
+            90
+        ),
+        1
+    )
 
     return {
         "season": season,
-        "tone": "Warm" if is_warm else "Cool",
+        "undertone": undertone,
         "description": description,
-        "recommended_colors": recommended_colors
+        "recommended_colors": (
+            recommended_colors
+        ),
+        "confidence": confidence
     }
 
 
-def analyze_personal_color(image: Image.Image):
+def analyze_personal_color(
+    image: Image.Image
+):
     """
-    MediaPipe 얼굴 랜드마크를 활용해
-    간이 퍼스널 컬러 분석을 수행합니다.
+    얼굴 볼 영역의 색상을 분석해
+    퍼스널 컬러 타입을 추정합니다.
     """
 
-    face_result = detect_single_face(
-        image
-    )
+    try:
+        image = image.convert("RGB")
 
-    if not face_result["success"]:
-        return face_result
+        image_array = np.asarray(
+            image
+        )
 
-    image_array = face_result[
-        "image_array"
-    ]
+        image_array = np.ascontiguousarray(
+            image_array
+        )
 
-    landmarks = face_result[
-        "landmarks"
-    ]
+        mp_image = mp.Image(
+            image_format=mp.ImageFormat.SRGB,
+            data=image_array
+        )
 
-    skin_pixels = extract_face_skin_pixels(
-        image_array,
-        landmarks
-    )
+        landmarker = create_face_landmarker()
+        result = landmarker.detect(
+            mp_image
+        )
 
-    if len(skin_pixels) < 30:
+    except Exception as error:
         return {
             "success": False,
             "message": (
-                "피부색을 충분히 추출하지 못했습니다. "
-                "자연광에서 촬영하고 이마와 양 볼이 "
-                "잘 보이는 사진을 사용해주세요."
+                "사진을 분석하는 중 오류가 발생했습니다. "
+                "다른 사진을 사용해주세요."
+            ),
+            "error": str(error)
+        }
+
+    if not result.face_landmarks:
+        return {
+            "success": False,
+            "message": (
+                "얼굴을 감지하지 못했습니다. "
+                "얼굴이 선명하게 보이는 사진을 "
+                "업로드해주세요."
             )
         }
 
-    features = calculate_color_features(
-        skin_pixels
+    if len(result.face_landmarks) > 1:
+        return {
+            "success": False,
+            "message": (
+                "여러 명의 얼굴이 감지되었습니다. "
+                "한 사람만 포함된 사진을 "
+                "업로드해주세요."
+            )
+        }
+
+    landmarks = result.face_landmarks[0]
+
+    if not check_face_size(landmarks):
+        return {
+            "success": False,
+            "message": (
+                "사진 속 얼굴이 너무 작습니다. "
+                "얼굴이 더 크게 보이는 사진을 "
+                "업로드해주세요."
+            )
+        }
+
+    height, width = image_array.shape[:2]
+
+    face_bounds = get_face_bounds(
+        landmarks,
+        width,
+        height
     )
 
-    classification = classify_personal_color(
-        features
+    cheek_regions = extract_cheek_regions(
+        image_array,
+        face_bounds
+    )
+
+    skin_color = calculate_skin_color(
+        cheek_regions
+    )
+
+    if skin_color is None:
+        return {
+            "success": False,
+            "message": (
+                "피부색을 분석하지 못했습니다. "
+                "조명이 밝고 얼굴에 그림자가 적은 "
+                "사진을 사용해주세요."
+            )
+        }
+
+    color_features = calculate_color_features(
+        skin_color
+    )
+
+    classification = (
+        classify_personal_color(
+            color_features
+        )
     )
 
     return {
@@ -423,8 +457,8 @@ def analyze_personal_color(image: Image.Image):
         "season": classification[
             "season"
         ],
-        "tone": classification[
-            "tone"
+        "undertone": classification[
+            "undertone"
         ],
         "description": classification[
             "description"
@@ -432,5 +466,8 @@ def analyze_personal_color(image: Image.Image):
         "recommended_colors": classification[
             "recommended_colors"
         ],
-        "features": features
+        "confidence": classification[
+            "confidence"
+        ],
+        "color_features": color_features
     }

@@ -1,11 +1,148 @@
 import streamlit as st
+
+from analysis.color_analyzer import (
+    analyze_personal_color
+)
 from utils.navigation import go_to_page
 
 
 def show_personal_color_page():
-    st.title("🎨 Personal Color Analysis")
+    st.markdown(
+        """
+        <div class="page-title">
+            Personal Color Analysis
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.write("퍼스널 컬러 분석 페이지입니다.")
+    st.markdown(
+        """
+        <div class="page-description">
+            업로드한 얼굴 사진을 기반으로
+            퍼스널 컬러를 분석합니다.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    if st.button("← Back"):
-        go_to_page("upload")
+    if "uploaded_image" not in st.session_state:
+        st.warning(
+            "업로드된 사진이 없습니다."
+        )
+
+        if st.button(
+            "← Upload Page",
+            use_container_width=True
+        ):
+            go_to_page("upload")
+
+        return
+
+    image = st.session_state[
+        "uploaded_image"
+    ]
+
+    st.image(
+        image,
+        caption="Uploaded Photo",
+        use_container_width=True
+    )
+
+    st.info(
+        "자연광에서 촬영한 무필터 사진을 "
+        "사용하면 더 안정적인 결과를 얻을 수 있습니다."
+    )
+
+    back_column, analyze_column = st.columns(
+        2
+    )
+
+    with back_column:
+        if st.button(
+            "← Back",
+            use_container_width=True,
+            key="color_back"
+        ):
+            go_to_page("upload")
+
+    with analyze_column:
+        color_analyze_clicked = st.button(
+            "Analyze Personal Color 🎨",
+            type="primary",
+            use_container_width=True,
+            key="color_analyze"
+        )
+
+    if color_analyze_clicked:
+        with st.spinner(
+            "Analyzing skin tone and color..."
+        ):
+            result = analyze_personal_color(
+                image
+            )
+
+        if result["success"]:
+            st.session_state[
+                "color_analysis_result"
+            ] = result
+
+        else:
+            st.session_state.pop(
+                "color_analysis_result",
+                None
+            )
+
+            st.error(
+                result["message"]
+            )
+
+    result = st.session_state.get(
+        "color_analysis_result"
+    )
+
+    if result is not None:
+        st.divider()
+
+        st.subheader(
+            f'🎨 {result["season"]}'
+        )
+
+        st.metric(
+            "Undertone",
+            result["undertone"]
+        )
+
+        st.metric(
+            "Estimated Confidence",
+            f'{result["confidence"]}%'
+        )
+
+        st.write(
+            result["description"]
+        )
+
+        st.markdown(
+            "#### Recommended Colors"
+        )
+
+        st.write(
+            " · ".join(
+                result[
+                    "recommended_colors"
+                ]
+            )
+        )
+
+        with st.expander(
+            "View analysis details"
+        ):
+            st.json(
+                result["color_features"]
+            )
+
+        st.caption(
+            "이 결과는 사진 속 색상값을 기반으로 한 "
+            "간단한 추정 결과입니다. 조명, 카메라 보정, "
+            "필터와 배경색에 따라 달라질 수 있습니다."
+        )
