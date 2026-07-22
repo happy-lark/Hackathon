@@ -83,28 +83,28 @@ def show_upload_page():
 
     st.write("")
 
-    back_column, space, analyze_column = st.columns(
-        [1, 2, 1]
-    )
-
-    with back_column:
-        if st.button(
-            "← Back",
-            use_container_width=True
-        ):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("← Back", use_container_width=True):
             go_to_page("target")
-
-    with analyze_column:
+    with col2:
         analyze_clicked = st.button(
-            "Analyze ✨",
+            "✨ Analyze",
             type="primary",
             use_container_width=True,
-            disabled=(
-                "uploaded_image"
-                not in st.session_state
-            )
-        )
+            disabled="uploaded_image" not in st.session_state
+    )
 
+    with col3:
+        personal_color_clicked = st.button(
+        "🎨 Personal Color",
+        use_container_width=True
+    )
+
+    if personal_color_clicked:
+        go_to_page("personal_color")
+
+   
     if analyze_clicked:
         image = st.session_state[
             "uploaded_image"
@@ -137,7 +137,8 @@ def show_upload_page():
 
     if st.button(
         "Clear uploaded photo",
-        use_container_width=True
+        use_container_width=True,
+        key="clear_uploaded_photo"
     ):
         reset_analysis()
         st.rerun()

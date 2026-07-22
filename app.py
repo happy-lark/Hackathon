@@ -5,7 +5,8 @@ from pages.mode import show_mode_page
 from pages.target import show_target_page
 from pages.upload import show_upload_page
 from pages.result import show_result_page
-
+#퍼컬용
+from pages.personal_color import show_personal_color_page
 from utils.session import initialize_session_state
 
 
@@ -57,6 +58,9 @@ elif current_page == "upload":
 
 elif current_page == "result":
     show_result_page()
+
+elif current_page == "personal_color":
+    show_personal_color_page()
 
 else:
     st.session_state["page"] = "landing"
