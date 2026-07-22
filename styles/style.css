@@ -1,0 +1,130 @@
+/* 전체 화면 */
+
+.block-container {
+    max-width: 900px;
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
+
+
+/* 랜딩 페이지 */
+
+.landing-container {
+    text-align: center;
+    padding-top: 120px;
+}
+
+.main-title {
+    text-align: center;
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+.main-subtitle {
+    text-align: center;
+    font-size: 18px;
+    color: #777777;
+    margin-bottom: 45px;
+}
+
+
+/* 일반 페이지 제목 */
+
+.page-title {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 750;
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.page-description {
+    text-align: center;
+    color: #777777;
+    font-size: 16px;
+    margin-bottom: 32px;
+}
+
+.step-text {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999999;
+    letter-spacing: 1px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+
+
+/* 안내 카드 */
+
+.info-card {
+    padding: 18px 20px;
+    border-radius: 16px;
+    background-color: rgba(120, 120, 120, 0.08);
+    margin-top: 18px;
+    margin-bottom: 18px;
+    line-height: 1.6;
+}
+
+
+/* 결과 페이지 */
+
+.result-notice {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background-color: rgba(120, 120, 120, 0.08);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+
+/* Streamlit 버튼 */
+
+div.stButton > button {
+    border-radius: 14px;
+    min-height: 48px;
+    font-weight: 650;
+    transition: all 0.2s ease;
+}
+
+div.stButton > button:hover {
+    transform: translateY(-1px);
+}
+
+
+/* 파일 업로더 */
+
+[data-testid="stFileUploader"] {
+    padding: 12px;
+    border-radius: 16px;
+}
+
+
+/* metric */
+
+[data-testid="stMetric"] {
+    padding: 12px;
+    border-radius: 14px;
+    background-color: rgba(120, 120, 120, 0.06);
+}
+
+
+/* 작은 화면 */
+
+@media (max-width: 700px) {
+    .main-title {
+        font-size: 38px;
+    }
+
+    .page-title {
+        font-size: 30px;
+    }
+
+    .landing-container {
+        padding-top: 70px;
+    }
+}
