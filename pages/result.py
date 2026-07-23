@@ -12,6 +12,7 @@ from components.feature_bar import render_all_feature_bars
 from components.resume_styling import split_resume_colors
 from components.full_report import generate_full_report
 
+
 def calculate_match_score(
     comparison_dataframe
 ):
@@ -328,7 +329,7 @@ def show_result_page():
         for color in personal_color["recommended_colors"]:
             st.markdown(f"- {color}")
             
-        from components.full_report import generate_full_report
+        
 
     full_report = generate_full_report(
         target_persona, detected_persona, features, personal_color, selected_mode
@@ -346,6 +347,17 @@ def show_result_page():
         for c in full_report["color_profile"]:
             st.write(f"- **{c['name']}** ({c['value']}) — {c['blurb']}")
 
+    #3. Resume 맞춤 추천
+    resume_recommendation = analysis_result.get("resume_recommendation")
+
+    if resume_recommendation:
+        st.divider()
+        st.subheader("📄 Resume-Tailored Recommendation")
+        st.write(f"**업계 톤**: {resume_recommendation['industry_tone']}")
+        st.write(f"**배경 추천**: {resume_recommendation['background_advice']}")
+        st.write(f"**의상 추천**: {resume_recommendation['clothing_advice']}")
+        st.caption(f"💡 {resume_recommendation['keyword_tip']}")
+    
     st.markdown(
         """
         <div class="result-notice">

@@ -7,6 +7,9 @@ from analysis.analyzer import (
 from analysis.color_analyzer import (
     analyze_personal_color
 )
+from analysis.resume_analyzer import (
+    analyze_resume_context
+)
 from utils.navigation import (
     go_to_page,
     reset_analysis
@@ -178,6 +181,15 @@ def show_upload_page():
         )
 
     st.write("")
+    
+    st.markdown("#### 📄 Resume / Target Job (선택)")
+    st.caption("입력하지 않아도 분석은 진행됩니다. 입력하면 직무 맥락에 맞는 스타일 추천을 추가로 받을 수 있어요.")
+    resume_text = st.text_area(
+        "이력서 내용 또는 지원하려는 직무를 간단히 적어주세요.",
+        placeholder="예: 스타트업 백엔드 개발자 포지션에 지원 예정입니다.",
+        key="resume_context_input",
+    )
+    st.write("")
 
     back_column, analyze_column, color_column = (
         st.columns(3)
@@ -230,9 +242,15 @@ def show_upload_page():
             color_result = analyze_personal_color(images[0])
             if not color_result.get("success"):
                 color_result = None
+                
+            # Resume 맞춤 분석 (선택 - 입력했을 때만 실제로 유효한 결과)
+            resume_result = analyze_resume_context(resume_text)
+            if not resume_result.get("success"):
+                resume_result = None
 
         if analysis_result["success"]:
             analysis_result["personal_color"] = color_result
+            analysis_result["resume_recommendation"] = resume_result
 
             st.session_state[
                 "analysis_result"
