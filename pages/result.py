@@ -9,7 +9,7 @@ from utils.navigation import (
 from components.persona_bar import render_all_persona_bars
 from components.feedback import generate_detailed_feedback
 from components.feature_bar import render_all_feature_bars
-
+from components.resume_styling import split_resume_colors
 
 
 def calculate_match_score(
@@ -315,6 +315,18 @@ def show_result_page():
         st.warning(f"🔧 보완하면 좋은 부분: {', '.join(report['improvements'])}")
 
     st.caption(report["closing"])
+    
+    personal_color = analysis_result.get("personal_color")
+
+    if personal_color:
+        st.divider()
+        st.subheader("🎨 Personal Color & Resume Styling")
+        st.write(f"**{personal_color['season']}** (Confidence {personal_color['confidence']}%)")
+        st.write(personal_color["description"])
+
+        st.markdown("**추천 색상**")
+        for color in personal_color["recommended_colors"]:
+            st.markdown(f"- {color}")
 
     st.markdown(
         """
