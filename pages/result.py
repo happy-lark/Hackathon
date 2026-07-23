@@ -6,6 +6,10 @@ from utils.navigation import (
     reset_all
 )
 
+from components.persona_bar import render_all_persona_bars
+from components.feedback import generate_detailed_feedback
+
+
 
 def calculate_match_score(
     comparison_dataframe
@@ -298,6 +302,8 @@ def show_result_page():
     st.bar_chart(
         comparison_chart
     )
+    
+    render_all_persona_bars(target_persona, detected_persona)
 
     match_score = calculate_match_score(
         comparison_dataframe
@@ -308,15 +314,16 @@ def show_result_page():
         f"{match_score}%"
     )
 
-    feedback = generate_feedback(
-        comparison_dataframe
-    )
+    feedback = generate_detailed_feedback(target_persona, detected_persona)
 
     st.markdown(
         f"""
         <div class="info-card">
             <strong>✨ Personalized Feedback</strong><br>
-            {feedback}
+            {feedback['summary']}<br><br>
+            {'<br>'.join('• ' + line for line in feedback['axis_feedback'])}
+            <br><br>
+            <strong>💡 {feedback['top_tip']}</strong>
         </div>
         """,
         unsafe_allow_html=True
