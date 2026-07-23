@@ -8,6 +8,7 @@ from utils.navigation import (
 
 from components.persona_bar import render_all_persona_bars
 from components.feedback import generate_detailed_feedback
+from components.feature_bar import render_all_feature_bars
 
 
 
@@ -173,28 +174,7 @@ def show_result_page():
         "🔍 Facial Feature Analysis"
     )
 
-    feature_dataframe = pd.DataFrame(
-        {
-            "Feature": list(
-                features.keys()
-            ),
-            "Score": list(
-                features.values()
-            )
-        }
-    )
-
-    st.dataframe(
-        feature_dataframe,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.bar_chart(
-        feature_dataframe.set_index(
-            "Feature"
-        )
-    )
+    render_all_feature_bars(features)
 
     st.caption(
         "미소, 눈 개방도, 얼굴 정면도, "
@@ -314,20 +294,27 @@ def show_result_page():
         f"{match_score}%"
     )
 
-    feedback = generate_detailed_feedback(target_persona, detected_persona)
+    from components.feedback_report import generate_report_feedback
 
-    st.markdown(
-        f"""
-        <div class="info-card">
-            <strong>✨ Personalized Feedback</strong><br>
-            {feedback['summary']}<br><br>
-            {'<br>'.join('• ' + line for line in feedback['axis_feedback'])}
-            <br><br>
-            <strong>💡 {feedback['top_tip']}</strong>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    report = generate_report_feedback(target_persona, detected_persona, selected_mode)
+
+    st.subheader("📋 Persona Diagnostic Report")
+    st.write(report["overview"])
+    st.write("")
+
+    for section in report["sections"]:
+        gap_text = f"+{section['gap']}" if section['gap'] >= 0 else str(section['gap'])
+        st.markdown(f"### {section['axis']} — {section['score']}% (Target {section['target']}%, {gap_text})")
+        st.write(section["narrative"])
+        st.markdown(f"💡 **Tip**: {section['tip']}")
+        st.write("")
+
+    if report["strengths"]:
+        st.success(f"✅ 강점: {', '.join(report['strengths'])}")
+    if report["improvements"]:
+        st.warning(f"🔧 보완하면 좋은 부분: {', '.join(report['improvements'])}")
+
+    st.caption(report["closing"])
 
     st.markdown(
         """
