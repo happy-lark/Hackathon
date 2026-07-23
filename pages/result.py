@@ -10,7 +10,7 @@ from components.persona_bar import render_all_persona_bars
 from components.feedback import generate_detailed_feedback
 from components.feature_bar import render_all_feature_bars
 from components.resume_styling import split_resume_colors
-
+from components.full_report import generate_full_report
 
 def calculate_match_score(
     comparison_dataframe
@@ -327,6 +327,24 @@ def show_result_page():
         st.markdown("**추천 색상**")
         for color in personal_color["recommended_colors"]:
             st.markdown(f"- {color}")
+            
+        from components.full_report import generate_full_report
+
+    full_report = generate_full_report(
+        target_persona, detected_persona, features, personal_color, selected_mode
+    )
+
+    st.divider()
+    st.subheader("📋 세부 특징 분석")
+
+    st.markdown("#### 표정/구도 특징")
+    for feat in full_report["sub_features"]:
+        st.write(f"- **{feat['name']}** ({feat['value']}) — {feat['blurb']}")
+
+    if full_report["color_profile"]:
+        st.markdown("#### 컬러 프로필")
+        for c in full_report["color_profile"]:
+            st.write(f"- **{c['name']}** ({c['value']}) — {c['blurb']}")
 
     st.markdown(
         """
