@@ -6,6 +6,9 @@ from utils.navigation import (
     reset_all
 )
 
+#from pages.image_edit_result import (
+#    show_image_edit_results
+#)
 
 def calculate_match_score(
     comparison_dataframe
@@ -413,6 +416,8 @@ def show_result_page():
         """,
         unsafe_allow_html=True
     )
+
+    #show_image_edit_results()
 
     st.markdown(
         """

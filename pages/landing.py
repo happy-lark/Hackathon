@@ -9,7 +9,7 @@ def show_landing_page():
         <div class="landing-container">
             <div class="main-title">
                 ✨ Welcome to<br>
-                PersonaLab!
+                PersonaLab! 
             </div>
 
             <div class="main-subtitle">
