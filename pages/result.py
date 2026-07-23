@@ -14,7 +14,6 @@ def calculate_match_score(
     Target과 Detected의 평균 절대 차이를 기반으로
     Match Score를 계산합니다.
     """
-
     average_difference = (
         comparison_dataframe["Difference"]
         .abs()
@@ -35,7 +34,6 @@ def generate_feedback(comparison_dataframe):
     Target Persona와 Detected Persona의 차이를 바탕으로
     간단한 피드백을 생성합니다.
     """
-
     largest_gap_row = comparison_dataframe.iloc[
         comparison_dataframe["Difference"]
         .abs()
@@ -47,7 +45,7 @@ def generate_feedback(comparison_dataframe):
 
     if abs(difference) < 5:
         return (
-            "목표 Persona와 실제 사진의 인상이 "
+            "목표 Persona와 여러 사진에서 확인된 인상이 "
             "전반적으로 잘 일치합니다."
         )
 
@@ -98,6 +96,72 @@ def generate_feedback(comparison_dataframe):
     }
 
     return feedback_by_persona[persona]
+
+
+def show_uploaded_images(images):
+    """
+    분석에 사용한 여러 사진을 표시합니다.
+    """
+    columns = st.columns(3)
+
+    for index, image in enumerate(images):
+        with columns[index % 3]:
+            st.image(
+                image,
+                caption=f"Photo {index + 1}",
+                use_container_width=True
+            )
+
+
+def show_individual_results(
+    analysis_result
+):
+    """
+    각 사진의 개별 분석 결과를 표시합니다.
+    """
+    individual_results = analysis_result.get(
+        "individual_results",
+        []
+    )
+
+    if not individual_results:
+        return
+
+    with st.expander(
+        "View individual photo results"
+    ):
+        for item in individual_results:
+            photo_number = (
+                item["image_index"] + 1
+            )
+
+            st.markdown(
+                f"#### Photo {photo_number}"
+            )
+
+            if not item["success"]:
+                st.error(
+                    item["message"]
+                )
+
+                continue
+
+            individual_dataframe = pd.DataFrame(
+                {
+                    "Persona": list(
+                        item["detected_persona"].keys()
+                    ),
+                    "Score": list(
+                        item["detected_persona"].values()
+                    )
+                }
+            )
+
+            st.dataframe(
+                individual_dataframe,
+                use_container_width=True,
+                hide_index=True
+            )
 
 
 def show_result_page():
@@ -153,20 +217,47 @@ def show_result_page():
         unsafe_allow_html=True
     )
 
-    if "uploaded_image" in st.session_state:
-        st.image(
-            st.session_state[
-                "uploaded_image"
-            ],
-            caption="Analyzed Photo",
-            use_container_width=True
+    uploaded_images = st.session_state.get(
+        "uploaded_images",
+        []
+    )
+
+    if uploaded_images:
+        show_uploaded_images(
+            uploaded_images
+        )
+
+    valid_count = analysis_result.get(
+        "valid_count",
+        1
+    )
+
+    total_count = analysis_result.get(
+        "total_count",
+        valid_count
+    )
+
+    failed_count = analysis_result.get(
+        "failed_count",
+        0
+    )
+
+    if failed_count > 0:
+        st.warning(
+            f"{total_count}장 중 {valid_count}장의 사진을 "
+            "종합 분석했습니다. "
+            f"{failed_count}장은 분석에서 제외되었습니다."
+        )
+
+    else:
+        st.success(
+            f"{valid_count}장의 사진을 종합 분석했습니다."
         )
 
     st.divider()
 
-    # 얼굴 특징 분석
     st.subheader(
-        "🔍 Facial Feature Analysis"
+        "🔍 Average Facial Feature Analysis"
     )
 
     feature_dataframe = pd.DataFrame(
@@ -193,20 +284,18 @@ def show_result_page():
     )
 
     st.caption(
-        "미소, 눈 개방도, 얼굴 정면도, "
-        "고개 수평도, 입의 안정성 및 "
-        "사진 속 얼굴 위치를 측정한 결과입니다."
+        "각 사진에서 측정한 미소, 눈 개방도, 얼굴 정면도, "
+        "고개 수평도, 입의 안정성 및 얼굴 위치의 평균입니다."
     )
 
     st.divider()
 
-    # Detected Persona
     st.subheader(
-        "🧑 Detected Persona"
+        "🧑 Combined Detected Persona"
     )
 
-    column1, column2, column3, column4 = st.columns(
-        4
+    column1, column2, column3, column4 = (
+        st.columns(4)
     )
 
     column1.metric(
@@ -246,9 +335,12 @@ def show_result_page():
         )
     )
 
+    show_individual_results(
+        analysis_result
+    )
+
     st.divider()
 
-    # Target vs Detected
     st.subheader(
         "🎯 Target vs Detected"
     )
@@ -326,9 +418,9 @@ def show_result_page():
         """
         <div class="result-notice">
             이 결과는 사람의 실제 성격, 능력, 지능 또는 직업을
-            판단한 것이 아닙니다. 사진에서 관찰되는 미소, 눈의
-            개방도, 얼굴 방향과 위치를 바탕으로 계산한 시각적
-            인상 분석 결과입니다.
+            판단한 것이 아닙니다. 여러 사진에서 관찰되는 미소,
+            눈의 개방도, 얼굴 방향과 위치를 바탕으로 계산한
+            시각적 인상 분석 결과입니다.
         </div>
         """,
         unsafe_allow_html=True

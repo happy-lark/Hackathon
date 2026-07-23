@@ -11,7 +11,7 @@ from utils.session import initialize_session_state
 
 
 st.set_page_config(
-    page_title="Persona Analyzer",
+    page_title="PersonaLab",
     page_icon="✨",
     layout="centered"
 )

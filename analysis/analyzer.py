@@ -18,6 +18,14 @@ MODEL_URL = (
 )
 
 
+PERSONA_NAMES = [
+    "Warm",
+    "Confident",
+    "Professional",
+    "Approachable"
+]
+
+
 def clamp(value, minimum=0.0, maximum=100.0):
     """
     값을 지정된 범위 안으로 제한합니다.
@@ -29,7 +37,6 @@ def prepare_model():
     """
     MediaPipe 얼굴 분석 모델이 없을 경우 자동 다운로드합니다.
     """
-
     MODEL_DIRECTORY.mkdir(
         parents=True,
         exist_ok=True
@@ -49,7 +56,6 @@ def create_face_landmarker():
     """
     Face Landmarker 모델을 한 번만 생성합니다.
     """
-
     model_path = prepare_model()
 
     options = mp.tasks.vision.FaceLandmarkerOptions(
@@ -57,13 +63,8 @@ def create_face_landmarker():
             model_asset_path=model_path
         ),
         running_mode=mp.tasks.vision.RunningMode.IMAGE,
-
-        # 여러 명 감지 여부를 확인하기 위해 최대 2명
         num_faces=2,
-
-        # 표정 관련 blendshape 값 출력
         output_face_blendshapes=True,
-
         min_face_detection_confidence=0.5,
         min_face_presence_confidence=0.5,
         min_tracking_confidence=0.5
@@ -78,7 +79,6 @@ def get_blendshape_score(blendshapes, name):
     """
     MediaPipe blendshape 결과에서 원하는 항목을 찾습니다.
     """
-
     for item in blendshapes:
         if item.category_name == name:
             return float(item.score)
@@ -89,12 +89,7 @@ def get_blendshape_score(blendshapes, name):
 def calculate_frontality(landmarks):
     """
     코가 양쪽 눈 사이 중앙에 얼마나 가까운지 측정합니다.
-
-    33  : 왼쪽 눈 바깥쪽
-    263 : 오른쪽 눈 바깥쪽
-    1   : 코끝
     """
-
     left_eye = landmarks[33]
     right_eye = landmarks[263]
     nose = landmarks[1]
@@ -130,7 +125,6 @@ def calculate_head_level(landmarks):
     """
     양쪽 눈의 높이 차이로 고개 기울기를 측정합니다.
     """
-
     left_eye = landmarks[33]
     right_eye = landmarks[263]
 
@@ -161,7 +155,6 @@ def calculate_face_centering(landmarks):
     """
     얼굴 중심이 사진 중앙에 얼마나 가까운지 측정합니다.
     """
-
     x_values = [
         landmark.x
         for landmark in landmarks
@@ -196,7 +189,6 @@ def check_face_size(landmarks):
     """
     얼굴이 사진에서 충분히 크게 보이는지 확인합니다.
     """
-
     x_values = [
         landmark.x
         for landmark in landmarks
@@ -225,7 +217,6 @@ def normalize_persona(persona_scores):
     """
     네 Persona 점수의 합을 100으로 정규화합니다.
     """
-
     total = sum(persona_scores.values())
 
     if total <= 0:
@@ -245,24 +236,55 @@ def normalize_persona(persona_scores):
     }
 
 
+def calculate_persona_from_features(features):
+    """
+    얼굴 특징 점수를 Persona 점수로 변환합니다.
+    """
+    warm = (
+        features["Smile"] * 0.70
+        + features["Eye Openness"] * 0.30
+    )
+
+    confident = (
+        features["Frontality"] * 0.35
+        + features["Eye Openness"] * 0.25
+        + features["Head Level"] * 0.25
+        + features["Face Centering"] * 0.15
+    )
+
+    professional = (
+        features["Frontality"] * 0.30
+        + features["Head Level"] * 0.30
+        + features["Mouth Control"] * 0.25
+        + features["Face Centering"] * 0.15
+    )
+
+    approachable = (
+        features["Smile"] * 0.55
+        + features["Eye Openness"] * 0.25
+        + features["Frontality"] * 0.20
+    )
+
+    raw_persona = {
+        "Warm": warm,
+        "Confident": confident,
+        "Professional": professional,
+        "Approachable": approachable
+    }
+
+    return normalize_persona(
+        raw_persona
+    )
+
+
 def analyze_face_persona(image: Image.Image):
     """
     얼굴 특징을 분석하고 Persona 점수를 반환합니다.
-
-    분석 특징:
-    - Smile
-    - Eye Openness
-    - Frontality
-    - Head Level
-    - Mouth Control
-    - Face Centering
     """
-
     try:
         image = image.convert("RGB")
         image_array = np.asarray(image)
 
-        # 일부 이미지에서 배열이 읽기 전용이 되는 문제 방지
         image_array = np.ascontiguousarray(
             image_array
         )
@@ -285,7 +307,6 @@ def analyze_face_persona(image: Image.Image):
             "error": str(error)
         }
 
-    # 얼굴 없음
     if not result.face_landmarks:
         return {
             "success": False,
@@ -296,7 +317,6 @@ def analyze_face_persona(image: Image.Image):
             )
         }
 
-    # 여러 명
     if len(result.face_landmarks) > 1:
         return {
             "success": False,
@@ -308,7 +328,6 @@ def analyze_face_persona(image: Image.Image):
 
     landmarks = result.face_landmarks[0]
 
-    # 얼굴 너무 작음
     if not check_face_size(landmarks):
         return {
             "success": False,
@@ -318,7 +337,6 @@ def analyze_face_persona(image: Image.Image):
             )
         }
 
-    # 표정 분석 실패
     if not result.face_blendshapes:
         return {
             "success": False,
@@ -331,7 +349,6 @@ def analyze_face_persona(image: Image.Image):
 
     blendshapes = result.face_blendshapes[0]
 
-    # 표정 관련 원본 값
     smile_left = get_blendshape_score(
         blendshapes,
         "mouthSmileLeft"
@@ -356,10 +373,6 @@ def analyze_face_persona(image: Image.Image):
         blendshapes,
         "jawOpen"
     )
-
-    # ------------------------------------------------
-    # 얼굴 특징 점수
-    # ------------------------------------------------
 
     smile = (
         (smile_left + smile_right)
@@ -414,48 +427,92 @@ def analyze_face_persona(image: Image.Image):
         )
     }
 
-    # ------------------------------------------------
-    # Persona 계산 기준
-    # ------------------------------------------------
-
-    warm = (
-        features["Smile"] * 0.70
-        + features["Eye Openness"] * 0.30
-    )
-
-    confident = (
-        features["Frontality"] * 0.35
-        + features["Eye Openness"] * 0.25
-        + features["Head Level"] * 0.25
-        + features["Face Centering"] * 0.15
-    )
-
-    professional = (
-        features["Frontality"] * 0.30
-        + features["Head Level"] * 0.30
-        + features["Mouth Control"] * 0.25
-        + features["Face Centering"] * 0.15
-    )
-
-    approachable = (
-        features["Smile"] * 0.55
-        + features["Eye Openness"] * 0.25
-        + features["Frontality"] * 0.20
-    )
-
-    raw_persona = {
-        "Warm": warm,
-        "Confident": confident,
-        "Professional": professional,
-        "Approachable": approachable
-    }
-
-    detected_persona = normalize_persona(
-        raw_persona
+    detected_persona = calculate_persona_from_features(
+        features
     )
 
     return {
         "success": True,
         "features": features,
         "detected_persona": detected_persona
+    }
+
+
+def analyze_multiple_face_personas(images):
+    """
+    여러 사진을 분석하고 얼굴 특징 평균을 이용해
+    하나의 종합 Persona 결과를 생성합니다.
+
+    분석에 실패한 사진은 종합 계산에서 제외합니다.
+    """
+    individual_results = []
+    valid_results = []
+    failed_results = []
+
+    for index, image in enumerate(images):
+        result = analyze_face_persona(
+            image
+        )
+
+        result_with_index = {
+            "image_index": index,
+            **result
+        }
+
+        individual_results.append(
+            result_with_index
+        )
+
+        if result["success"]:
+            valid_results.append(
+                result_with_index
+            )
+
+        else:
+            failed_results.append(
+                result_with_index
+            )
+
+    if not valid_results:
+        return {
+            "success": False,
+            "message": (
+                "분석 가능한 사진이 없습니다. "
+                "얼굴이 선명하게 보이는 다른 사진을 업로드해주세요."
+            ),
+            "individual_results": individual_results,
+            "valid_count": 0,
+            "failed_count": len(failed_results),
+            "total_count": len(images)
+        }
+
+    feature_names = list(
+        valid_results[0]["features"].keys()
+    )
+
+    averaged_features = {}
+
+    for feature_name in feature_names:
+        feature_values = [
+            result["features"][feature_name]
+            for result in valid_results
+        ]
+
+        averaged_features[feature_name] = round(
+            float(np.mean(feature_values)),
+            1
+        )
+
+    detected_persona = calculate_persona_from_features(
+        averaged_features
+    )
+
+    return {
+        "success": True,
+        "features": averaged_features,
+        "detected_persona": detected_persona,
+        "individual_results": individual_results,
+        "valid_count": len(valid_results),
+        "failed_count": len(failed_results),
+        "total_count": len(images)
     }

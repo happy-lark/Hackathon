@@ -1,11 +1,62 @@
 import streamlit as st
 from PIL import Image
 
-from analysis.analyzer import analyze_face_persona
+from analysis.analyzer import (
+    analyze_multiple_face_personas
+)
 from utils.navigation import (
     go_to_page,
     reset_analysis
 )
+
+
+MAX_IMAGES = 5
+
+
+def load_uploaded_images(uploaded_files):
+    """
+    Streamlit UploadedFile 목록을 PIL 이미지 목록으로 변환합니다.
+    """
+    images = []
+    errors = []
+
+    for index, uploaded_file in enumerate(
+        uploaded_files
+    ):
+        try:
+            image = Image.open(
+                uploaded_file
+            ).convert("RGB")
+
+            images.append(image)
+
+        except Exception:
+            errors.append(
+                index + 1
+            )
+
+    return images, errors
+
+
+def show_image_previews(images):
+    """
+    업로드한 이미지를 최대 3열 형태로 표시합니다.
+    """
+    st.markdown(
+        f"#### Uploaded Photos ({len(images)}/{MAX_IMAGES})"
+    )
+
+    columns = st.columns(3)
+
+    for index, image in enumerate(images):
+        column = columns[index % 3]
+
+        with column:
+            st.image(
+                image,
+                caption=f"Photo {index + 1}",
+                use_container_width=True
+            )
 
 
 def show_upload_page():
@@ -17,7 +68,7 @@ def show_upload_page():
     st.markdown(
         """
         <div class="page-title">
-            Upload Your Photo
+            Upload Your Photos
         </div>
         """,
         unsafe_allow_html=True
@@ -26,7 +77,8 @@ def show_upload_page():
     st.markdown(
         """
         <div class="page-description">
-            한 사람의 얼굴이 선명하게 보이는 사진을 업로드해주세요.
+            같은 사람의 얼굴이 선명하게 보이는 사진을
+            최대 5장까지 업로드해주세요.
         </div>
         """,
         unsafe_allow_html=True
@@ -36,8 +88,9 @@ def show_upload_page():
         """
         <div class="info-card">
             📸 권장 사진 조건<br>
+            · 모든 사진에 같은 사람만 포함<br>
             · 얼굴이 정면에 가까운 사진<br>
-            · 한 사람만 포함된 사진<br>
+            · 한 사진에 한 사람만 포함<br>
             · 눈, 코, 입이 가려지지 않은 사진<br>
             · 얼굴이 너무 작지 않은 사진
         </div>
@@ -45,77 +98,129 @@ def show_upload_page():
         unsafe_allow_html=True
     )
 
-    uploaded_file = st.file_uploader(
-        "Upload your photo",
-        type=["jpg", "jpeg", "png"],
-        label_visibility="collapsed",
-        key="photo_uploader"
+    uploader_version = st.session_state.get(
+        "uploader_version",
+        0
     )
 
-    if uploaded_file is not None:
-        try:
-            image = Image.open(
-                uploaded_file
-            ).convert("RGB")
+    uploaded_files = st.file_uploader(
+        "Upload your photos",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True,
+        label_visibility="collapsed",
+        key=f"photo_uploader_{uploader_version}"
+    )
 
-            st.session_state[
-                "uploaded_image"
-            ] = image
+    too_many_images = (
+        uploaded_files is not None
+        and len(uploaded_files) > MAX_IMAGES
+    )
 
-        except Exception:
-            st.session_state.pop(
-                "uploaded_image",
-                None
+    if too_many_images:
+        st.error(
+            "사진은 최대 5장까지만 업로드할 수 있습니다. "
+            "사진 수를 줄여주세요."
+        )
+
+        st.session_state.pop(
+            "uploaded_images",
+            None
+        )
+
+    elif uploaded_files:
+        images, image_errors = load_uploaded_images(
+            uploaded_files
+        )
+
+        if image_errors:
+            error_numbers = ", ".join(
+                str(number)
+                for number in image_errors
             )
 
             st.error(
-                "이미지 파일을 열 수 없습니다. "
-                "JPG, JPEG 또는 PNG 형식의 "
-                "정상적인 파일을 업로드해주세요."
+                f"{error_numbers}번째 이미지 파일을 "
+                "열 수 없습니다."
             )
 
-    if "uploaded_image" in st.session_state:
-        st.image(
-            st.session_state["uploaded_image"],
-            caption="Uploaded Photo",
-            use_container_width=True
+        if images:
+            st.session_state[
+                "uploaded_images"
+            ] = images
+
+            st.session_state.pop(
+                "analysis_result",
+                None
+            )
+
+            st.session_state.pop(
+                "color_analysis_result",
+                None
+            )
+
+    else:
+        st.session_state.pop(
+            "uploaded_images",
+            None
+        )
+
+    images = st.session_state.get(
+        "uploaded_images",
+        []
+    )
+
+    if images:
+        show_image_previews(
+            images
         )
 
     st.write("")
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("← Back", use_container_width=True):
+    back_column, analyze_column, color_column = (
+        st.columns(3)
+    )
+
+    with back_column:
+        if st.button(
+            "← Back",
+            use_container_width=True
+        ):
             go_to_page("target")
-    with col2:
+
+    with analyze_column:
         analyze_clicked = st.button(
             "✨ Analyze",
             type="primary",
             use_container_width=True,
-            disabled="uploaded_image" not in st.session_state
-    )
+            disabled=(
+                not images
+                or too_many_images
+            )
+        )
 
-    with col3:
+    with color_column:
         personal_color_clicked = st.button(
-        "🎨 Personal Color",
-        use_container_width=True
-    )
+            "🎨 Personal Color",
+            use_container_width=True,
+            disabled=(
+                not images
+                or too_many_images
+            )
+        )
 
     if personal_color_clicked:
-        go_to_page("personal_color")
+        go_to_page(
+            "personal_color"
+        )
 
-   
     if analyze_clicked:
-        image = st.session_state[
-            "uploaded_image"
-        ]
-
         with st.spinner(
-            "Analyzing facial expression "
-            "and visual impression..."
+            "Analyzing all uploaded photos..."
         ):
-            analysis_result = analyze_face_persona(
-                image
+            analysis_result = (
+                analyze_multiple_face_personas(
+                    images
+                )
             )
 
         if analysis_result["success"]:
@@ -123,7 +228,9 @@ def show_upload_page():
                 "analysis_result"
             ] = analysis_result
 
-            go_to_page("result")
+            go_to_page(
+                "result"
+            )
 
         else:
             st.session_state.pop(
@@ -135,10 +242,30 @@ def show_upload_page():
                 analysis_result["message"]
             )
 
+            individual_results = analysis_result.get(
+                "individual_results",
+                []
+            )
+
+            for item in individual_results:
+                if not item["success"]:
+                    st.warning(
+                        f'Photo {item["image_index"] + 1}: '
+                        f'{item["message"]}'
+                    )
+
     if st.button(
-        "Clear uploaded photo",
+        "Clear uploaded photos",
         use_container_width=True,
-        key="clear_uploaded_photo"
+        key="clear_uploaded_photos"
     ):
         reset_analysis()
+
+        st.session_state["uploader_version"] = (
+            st.session_state.get(
+                "uploader_version",
+                0
+            ) + 1
+        )
+
         st.rerun()
