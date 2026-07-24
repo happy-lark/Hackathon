@@ -9,6 +9,9 @@ from pages.image_edit_result import show_image_edit_result_page
 #퍼컬용
 from pages.personal_color import show_personal_color_page
 from utils.session import initialize_session_state
+from pages.service_intro import (
+    show_service_intro_page
+)
 
 
 st.set_page_config(
@@ -47,6 +50,9 @@ current_page = st.session_state["page"]
 
 if current_page == "landing":
     show_landing_page()
+    
+elif current_page == "service_intro":
+    show_service_intro_page()
 
 elif current_page == "mode":
     show_mode_page()
