@@ -81,7 +81,7 @@ def show_mode_page():
             "← Back",
             use_container_width=True
         ):
-            go_to_page("landing")
+            go_to_page("service_intro")
 
     with next_column:
         if st.button(

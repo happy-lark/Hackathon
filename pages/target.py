@@ -174,7 +174,7 @@ def show_target_page():
             "← Back",
             use_container_width=True
         ):
-            go_to_page("mode")
+            go_to_page("service_intro")
 
     with next_column:
         if st.button(
@@ -182,4 +182,4 @@ def show_target_page():
             type="primary",
             use_container_width=True
         ):
-            go_to_page("upload")
+            go_to_page("context")

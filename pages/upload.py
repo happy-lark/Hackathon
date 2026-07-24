@@ -455,7 +455,7 @@ def show_upload_page():
             "← Back",
             use_container_width=True
         ):
-            go_to_page("target")
+            go_to_page("context")
             
 
     with analyze_column:

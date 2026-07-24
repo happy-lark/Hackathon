@@ -12,6 +12,7 @@ from utils.session import initialize_session_state
 from pages.service_intro import (
     show_service_intro_page
 )
+from pages.context import show_context_page
 
 
 st.set_page_config(
@@ -54,11 +55,12 @@ if current_page == "landing":
 elif current_page == "service_intro":
     show_service_intro_page()
 
-elif current_page == "mode":
-    show_mode_page()
-
 elif current_page == "target":
     show_target_page()
+    
+elif current_page == "context":
+    show_context_page()
+
 
 elif current_page == "upload":
     show_upload_page()
@@ -71,7 +73,7 @@ elif current_page == "personal_color":
 
 elif current_page == "image_edit_result":
     show_image_edit_result_page()
-
+    
 else:
     st.session_state["page"] = "landing"
     st.rerun()

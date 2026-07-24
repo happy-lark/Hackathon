@@ -180,5 +180,5 @@ def show_service_intro_page():
             use_container_width=True
         ):
             go_to_page(
-                "mode"
+                "target"
             )
