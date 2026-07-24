@@ -1,285 +1,379 @@
 import streamlit as st
+
 from PIL import Image
+from textwrap import dedent
 
 from analysis.analyzer import (
     analyze_multiple_face_personas
 )
-from analysis.image_editor import (
-    process_images
-)
-from utils.navigation import (
-    go_to_page,
-    reset_analysis
-)
+from utils.navigation import go_to_page
 
 
 MAX_IMAGES = 5
 
-EDIT_NONE = "적용하지 않음"
-EDIT_ENHANCE = "사진 보정"
-EDIT_BACKGROUND = "배경 변경"
-EDIT_BOTH = "사진 보정 + 배경 변경"
 
-BACKGROUND_PERSONAL_COLOR = (
-    "퍼스널컬러 추천 단색"
-)
-BACKGROUND_NATURE = "자연환경"
+def render_html(html):
+    """
+    여러 줄 HTML의 들여쓰기를 제거한 후 출력합니다.
+
+    들여쓰기된 HTML이 Markdown 코드 블록으로
+    표시되는 문제를 방지합니다.
+    """
+
+    cleaned_html = dedent(html).strip()
+
+    st.markdown(
+        cleaned_html,
+        unsafe_allow_html=True
+    )
+
+
+def get_file_key(uploaded_file):
+    """
+    업로드된 파일을 구분하기 위한 키를 반환합니다.
+    """
+
+    return (
+        uploaded_file.name,
+        uploaded_file.size
+    )
+
+
+def create_upload_signature(uploaded_files):
+    """
+    현재 file_uploader의 파일 목록을 나타내는
+    signature를 생성합니다.
+    """
+
+    if not uploaded_files:
+        return None
+
+    return tuple(
+        get_file_key(uploaded_file)
+        for uploaded_file in uploaded_files
+    )
 
 
 def load_uploaded_images(uploaded_files):
     """
-    Streamlit UploadedFile 목록을 PIL 이미지 목록으로 변환합니다.
+    Streamlit UploadedFile 목록을 PIL 이미지로 변환합니다.
+
+    정상적으로 열린 이미지와 해당 파일 정보만 반환합니다.
     """
+
     images = []
+    filenames = []
+    file_keys = []
     errors = []
 
     for index, uploaded_file in enumerate(
         uploaded_files
     ):
         try:
+            uploaded_file.seek(0)
+
             image = Image.open(
                 uploaded_file
             ).convert("RGB")
 
             images.append(image)
+            filenames.append(
+                uploaded_file.name
+            )
+            file_keys.append(
+                get_file_key(uploaded_file)
+            )
 
         except Exception:
             errors.append(
-                index + 1
+                {
+                    "index": index + 1,
+                    "filename": uploaded_file.name
+                }
             )
 
-    return images, errors
+    return (
+        images,
+        filenames,
+        file_keys,
+        errors
+    )
 
 
-def create_upload_signature(uploaded_files):
+def clear_upload_results():
     """
-    실제 업로드 파일이 변경되었는지 확인하기 위한
-    파일 정보 묶음을 생성합니다.
+    업로드 사진과 관련된 기존 분석 결과를 제거합니다.
     """
-    if not uploaded_files:
-        return None
 
-    return tuple(
-        (
-            uploaded_file.name,
-            uploaded_file.size
+    keys_to_remove = [
+        "uploaded_images",
+        "uploaded_filenames",
+        "uploaded_file_signature",
+        "analysis_result",
+        "color_analysis_result",
+        "image_edit_result"
+    ]
+
+    for key in keys_to_remove:
+        st.session_state.pop(
+            key,
+            None
         )
-        for uploaded_file in uploaded_files
+
+
+def show_progress_header():
+    """
+    Back 버튼과 5단계 진행 상태를 표시합니다.
+
+    현재 Upload 페이지는 Step 3입니다.
+    """
+
+    back_column, progress_column, empty_column = (
+        st.columns(
+            [1.15, 4.7, 1.15],
+            vertical_alignment="center"
+        )
     )
 
+    with back_column:
+        if st.button(
+            "‹ Back",
+            key="upload_top_back"
+        ):
+            go_to_page("target")
 
-def show_image_previews(images):
+    with progress_column:
+        render_html(
+            """
+            <div class="upload-progress">
+                <div class="upload-progress-dot completed">1</div>
+                <div class="upload-progress-line completed"></div>
+                <div class="upload-progress-dot completed">2</div>
+                <div class="upload-progress-line completed"></div>
+                <div class="upload-progress-dot active">3</div>
+                <div class="upload-progress-line"></div>
+                <div class="upload-progress-dot">4</div>
+                <div class="upload-progress-line"></div>
+                <div class="upload-progress-dot">5</div>
+            </div>
+            """
+        )
+
+    with empty_column:
+        st.empty()
+
+
+def remove_uploaded_photo(file_key):
     """
-    업로드한 이미지를 최대 3열 형태로 표시합니다.
+    선택한 사진을 미리보기와 분석 대상에서 제외합니다.
     """
-    st.markdown(
-        f"#### Uploaded Photos "
-        f"({len(images)}/{MAX_IMAGES})"
+
+    removed_file_keys = list(
+        st.session_state.get(
+            "removed_upload_file_keys",
+            []
+        )
     )
 
-    columns = st.columns(3)
+    if file_key not in removed_file_keys:
+        removed_file_keys.append(
+            file_key
+        )
 
-    for index, image in enumerate(images):
-        column = columns[
-            index % 3
-        ]
+    st.session_state[
+        "removed_upload_file_keys"
+    ] = removed_file_keys
 
-        with column:
-            st.image(
-                image,
-                caption=f"Photo {index + 1}",
-                use_container_width=True
-            )
-
-
-def initialize_image_edit_settings():
-    """
-    이미지 편집 관련 session_state 기본값을 설정합니다.
-    """
-    default_values = {
-        "edit_option": EDIT_NONE,
-        "background_type": (
-            BACKGROUND_PERSONAL_COLOR
-        ),
-        "brightness_slider": 1.0,
-        "saturation_slider": 1.0,
-        "sharpness_slider": 1.0
-    }
-
-    for key, value in default_values.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-
-def clear_image_edit_result():
-    """
-    이전 이미지 편집 결과를 제거합니다.
-    """
     st.session_state.pop(
-        "image_edit_result",
+        "analysis_result",
         None
     )
 
+    st.session_state.pop(
+        "color_analysis_result",
+        None
+    )
 
-def show_image_edit_options():
+    st.rerun()
+
+
+def show_image_previews(
+    images,
+    file_keys
+):
     """
-    사진 업로드 전에도 이미지 편집 옵션을 표시합니다.
+    업로드된 사진을 최대 5열로 표시합니다.
+
+    사진이 없는 자리에는 빈 미리보기 카드가 표시됩니다.
     """
-    st.divider()
 
-    st.subheader(
-        "✨ Additional Image Options"
+    columns = st.columns(
+        MAX_IMAGES,
+        gap="small"
     )
 
-    st.caption(
-        "사진을 업로드한 뒤 Edit Photos 버튼을 누르면 "
-        "선택한 설정이 적용됩니다."
+    for index in range(MAX_IMAGES):
+        with columns[index]:
+            if index < len(images):
+                _, remove_column = st.columns(
+                    [4, 1],
+                    gap="small"
+                )
+
+                with remove_column:
+                    remove_clicked = st.button(
+                        "×",
+                        key=(
+                            f"remove_uploaded_photo_"
+                            f"{index}"
+                        ),
+                        help="Remove photo"
+                    )
+
+                if remove_clicked:
+                    remove_uploaded_photo(
+                        file_keys[index]
+                    )
+
+                st.image(
+                    images[index],
+                    use_container_width=True
+                )
+
+            else:
+                render_html(
+                    """
+                    <div class="upload-empty-photo">
+                        <span>＋</span>
+                    </div>
+                    """
+                )
+
+
+def show_upload_tips():
+    """
+    더 좋은 분석 결과를 위한 사진 안내를 표시합니다.
+    """
+
+    render_html(
+        """
+        <div class="upload-tips-card">
+            <div class="upload-tips-title">
+                Tips for better results
+            </div>
+            <div class="upload-tip-item">
+                <span>✓</span>
+                <div>Use clear, well-lit photos</div>
+            </div>
+            <div class="upload-tip-item">
+                <span>✓</span>
+                <div>Make sure your face is clearly visible</div>
+            </div>
+            <div class="upload-tip-item">
+                <span>✓</span>
+                <div>Avoid group photos or heavy filters</div>
+            </div>
+        </div>
+        """
     )
 
-    edit_option = st.radio(
-        "사진에 적용할 기능을 선택해주세요.",
-        options=[
-            EDIT_NONE,
-            EDIT_ENHANCE,
-            EDIT_BACKGROUND,
-            EDIT_BOTH
-        ],
-        horizontal=True,
-        key="edit_option"
-    )
 
-    if edit_option in [
-        EDIT_ENHANCE,
-        EDIT_BOTH
-    ]:
-        st.markdown(
-            "#### 📷 Photo Enhancement"
+def show_image_errors(image_errors):
+    """
+    열 수 없는 이미지가 있을 경우 오류 메시지를 표시합니다.
+    """
+
+    for error in image_errors:
+        st.error(
+            f'Photo {error["index"]} '
+            f'({error["filename"]}) could not be opened.'
         )
 
-        st.caption(
-            "1.0은 원본과 동일한 값입니다."
+
+def run_persona_analysis(images):
+    """
+    업로드한 사진의 Persona 분석을 실행합니다.
+    """
+
+    with st.spinner(
+        "Analyzing all uploaded photos..."
+    ):
+        analysis_result = (
+            analyze_multiple_face_personas(
+                images
+            )
         )
 
-        adjustment_columns = st.columns(
-            3
-        )
-
-        with adjustment_columns[0]:
-            st.slider(
-                "밝기",
-                min_value=0.5,
-                max_value=1.5,
-                step=0.1,
-                key="brightness_slider"
-            )
-
-        with adjustment_columns[1]:
-            st.slider(
-                "채도",
-                min_value=0.5,
-                max_value=1.5,
-                step=0.1,
-                key="saturation_slider"
-            )
-
-        with adjustment_columns[2]:
-            st.slider(
-                "선명도",
-                min_value=0.5,
-                max_value=2.0,
-                step=0.1,
-                key="sharpness_slider"
-            )
-
+    if analysis_result.get(
+        "success",
+        False
+    ):
         st.session_state[
-            "image_adjustments"
-        ] = {
-            "brightness": (
-                st.session_state[
-                    "brightness_slider"
-                ]
-            ),
-            "saturation": (
-                st.session_state[
-                    "saturation_slider"
-                ]
-            ),
-            "sharpness": (
-                st.session_state[
-                    "sharpness_slider"
-                ]
+            "analysis_result"
+        ] = analysis_result
+
+        go_to_page("result")
+
+        return
+
+    st.session_state.pop(
+        "analysis_result",
+        None
+    )
+
+    error_message = analysis_result.get(
+        "message",
+        "The photos could not be analyzed."
+    )
+
+    st.error(error_message)
+
+    individual_results = analysis_result.get(
+        "individual_results",
+        []
+    )
+
+    for item in individual_results:
+        if not item.get(
+            "success",
+            False
+        ):
+            image_index = (
+                item.get(
+                    "image_index",
+                    0
+                )
+                + 1
             )
-        }
 
-    if edit_option in [
-        EDIT_BACKGROUND,
-        EDIT_BOTH
-    ]:
-        st.markdown(
-            "#### 🏞️ Background Replacement"
-        )
+            message = item.get(
+                "message",
+                "The face could not be detected."
+            )
 
-        st.radio(
-            "변경할 배경 유형을 선택해주세요.",
-            options=[
-                BACKGROUND_PERSONAL_COLOR,
-                BACKGROUND_NATURE
-            ],
-            key="background_type"
-        )
-
-        st.info(
-            "퍼스널컬러 분석 결과를 기준으로 "
-            "어울리는 배경을 적용합니다. "
-            "배경 변경 전 Personal Color 분석을 "
-            "먼저 진행해주세요."
-        )
-
-    if edit_option == EDIT_NONE:
-        st.caption(
-            "별도의 사진 편집 없이 얼굴 인상 분석만 진행합니다."
-        )
+            st.warning(
+                f"Photo {image_index}: {message}"
+            )
 
 
 def show_upload_page():
-    initialize_image_edit_settings()
+    """
+    Step 3. 사진 업로드 페이지입니다.
+    """
 
-    st.markdown(
-        '<div class="step-text">STEP 3 OF 3</div>',
-        unsafe_allow_html=True
-    )
+    show_progress_header()
 
-    st.markdown(
+    render_html(
         """
-        <div class="page-title">
-            Upload Your Photos
+        <div class="upload-page-header">
+            <div class="upload-page-title">
+                Step 3. Upload Your Photos
+            </div>
+            <div class="upload-page-description">
+                Add up to 5 photos with your face clearly visible.
+            </div>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
         """
-        <div class="page-description">
-            같은 사람의 얼굴이 선명하게 보이는 사진을
-            최대 5장까지 업로드해주세요.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        """
-        <div class="info-card">
-            📸 권장 사진 조건<br>
-            · 모든 사진에 같은 사람만 포함<br>
-            · 얼굴이 정면에 가까운 사진<br>
-            · 한 사진에 한 사람만 포함<br>
-            · 눈, 코, 입이 가려지지 않은 사진<br>
-            · 얼굴이 너무 작지 않은 사진
-        </div>
-        """,
-        unsafe_allow_html=True
     )
 
     uploader_version = st.session_state.get(
@@ -299,333 +393,132 @@ def show_upload_page():
         key=f"photo_uploader_{uploader_version}"
     )
 
+    current_widget_signature = (
+        create_upload_signature(
+            uploaded_files
+        )
+    )
+
+    previous_widget_signature = (
+        st.session_state.get(
+            "upload_widget_signature"
+        )
+    )
+
+    # 사용자가 file_uploader의 파일 목록을 변경한 경우
+    if (
+        current_widget_signature
+        != previous_widget_signature
+    ):
+        st.session_state[
+            "upload_widget_signature"
+        ] = current_widget_signature
+
+        st.session_state[
+            "removed_upload_file_keys"
+        ] = []
+
+        clear_upload_results()
+
+    removed_file_keys = st.session_state.get(
+        "removed_upload_file_keys",
+        []
+    )
+
+    active_files = [
+        uploaded_file
+        for uploaded_file in (
+            uploaded_files or []
+        )
+        if get_file_key(
+            uploaded_file
+        ) not in removed_file_keys
+    ]
+
     too_many_images = (
-        uploaded_files is not None
-        and len(uploaded_files) > MAX_IMAGES
+        len(active_files) > MAX_IMAGES
     )
 
     if too_many_images:
         st.error(
-            "사진은 최대 5장까지만 업로드할 수 있습니다. "
-            "사진 수를 줄여주세요."
+            "You can upload up to 5 photos. "
+            "Please remove extra files."
         )
 
-        st.session_state.pop(
-            "uploaded_images",
-            None
+    # 5장을 초과한 경우에도 앞의 5장은 미리보기로 표시합니다.
+    preview_files = active_files[
+        :MAX_IMAGES
+    ]
+
+    if preview_files:
+        (
+            images,
+            filenames,
+            active_file_keys,
+            image_errors
+        ) = load_uploaded_images(
+            preview_files
         )
 
-        st.session_state.pop(
-            "uploaded_file_signature",
-            None
-        )
-
-        clear_image_edit_result()
-
-    elif uploaded_files:
-        current_signature = (
-            create_upload_signature(
-                uploaded_files
+        if image_errors:
+            show_image_errors(
+                image_errors
             )
-        )
 
-        previous_signature = (
-            st.session_state.get(
+        if not too_many_images:
+            st.session_state[
+                "uploaded_images"
+            ] = images
+
+            st.session_state[
+                "uploaded_filenames"
+            ] = filenames
+
+            st.session_state[
                 "uploaded_file_signature"
-            )
-        )
-
-        if (
-            current_signature
-            != previous_signature
-        ):
-            images, image_errors = (
-                load_uploaded_images(
-                    uploaded_files
-                )
+            ] = tuple(
+                active_file_keys
             )
 
-            if image_errors:
-                error_numbers = ", ".join(
-                    str(number)
-                    for number in image_errors
-                )
-
-                st.error(
-                    f"{error_numbers}번째 이미지 파일을 "
-                    "열 수 없습니다."
-                )
-
-            if images:
-                st.session_state[
-                    "uploaded_images"
-                ] = images
-
-                st.session_state[
-                    "uploaded_file_signature"
-                ] = current_signature
-
-                st.session_state.pop(
-                    "analysis_result",
-                    None
-                )
-
-                st.session_state.pop(
-                    "color_analysis_result",
-                    None
-                )
-
-                clear_image_edit_result()
+        else:
+            clear_upload_results()
 
     else:
-        st.session_state.pop(
-            "uploaded_images",
-            None
-        )
+        images = []
+        filenames = []
+        active_file_keys = []
 
-        st.session_state.pop(
-            "uploaded_file_signature",
-            None
-        )
+        clear_upload_results()
 
-        clear_image_edit_result()
-
-    images = st.session_state.get(
-        "uploaded_images",
-        []
+    render_html(
+        '<div class="upload-preview-space"></div>'
     )
 
-    if images:
-        show_image_previews(
+    show_image_previews(
+        images=images,
+        file_keys=active_file_keys
+    )
+
+    show_upload_tips()
+
+    render_html(
+        '<div class="upload-continue-space"></div>'
+    )
+
+    continue_disabled = (
+        not images
+        or too_many_images
+    )
+
+    continue_clicked = st.button(
+        "Continue",
+        type="primary",
+        use_container_width=True,
+        disabled=continue_disabled,
+        key="upload_continue_button"
+    )
+
+    if continue_clicked:
+        run_persona_analysis(
             images
         )
-
-    # 사진이 없어도 항상 표시
-    show_image_edit_options()
-
-    st.write("")
-
-    (
-        back_column,
-        analyze_column,
-        color_column,
-        edit_column
-    ) = st.columns(4)
-
-    with back_column:
-        if st.button(
-            "← Back",
-            use_container_width=True
-        ):
-            go_to_page(
-                "target"
-            )
-
-    with analyze_column:
-        analyze_clicked = st.button(
-            "✨ Analyze",
-            type="primary",
-            use_container_width=True,
-            disabled=(
-                not images
-                or too_many_images
-            )
-        )
-
-    with color_column:
-        personal_color_clicked = st.button(
-            "🎨 Personal Color",
-            use_container_width=True,
-            disabled=(
-                not images
-                or too_many_images
-            )
-        )
-
-    edit_option = st.session_state.get(
-        "edit_option",
-        EDIT_NONE
-    )
-
-    with edit_column:
-        edit_clicked = st.button(
-            "🪄 Edit Photos",
-            use_container_width=True,
-            disabled=(
-                not images
-                or too_many_images
-                or edit_option == EDIT_NONE
-            )
-        )
-
-    if personal_color_clicked:
-        go_to_page(
-            "personal_color"
-        )
-
-    if analyze_clicked:
-        with st.spinner(
-            "Analyzing all uploaded photos..."
-        ):
-            analysis_result = (
-                analyze_multiple_face_personas(
-                    images
-                )
-            )
-
-        if analysis_result["success"]:
-            st.session_state[
-                "analysis_result"
-            ] = analysis_result
-
-            go_to_page(
-                "result"
-            )
-
-        else:
-            st.session_state.pop(
-                "analysis_result",
-                None
-            )
-
-            st.error(
-                analysis_result["message"]
-            )
-
-            individual_results = (
-                analysis_result.get(
-                    "individual_results",
-                    []
-                )
-            )
-
-            for item in individual_results:
-                if not item["success"]:
-                    st.warning(
-                        f'Photo '
-                        f'{item["image_index"] + 1}: '
-                        f'{item["message"]}'
-                    )
-
-    if edit_clicked:
-        uses_background = (
-            edit_option in [
-                EDIT_BACKGROUND,
-                EDIT_BOTH
-            ]
-        )
-
-        color_analysis_result = (
-            st.session_state.get(
-                "color_analysis_result"
-            )
-        )
-
-        if (
-            uses_background
-            and not color_analysis_result
-        ):
-            st.warning(
-                "배경을 변경하려면 먼저 "
-                "Personal Color 분석을 진행해주세요."
-            )
-
-        else:
-            image_adjustments = (
-                st.session_state.get(
-                    "image_adjustments",
-                    {
-                        "brightness": 1.0,
-                        "saturation": 1.0,
-                        "sharpness": 1.0
-                    }
-                )
-            )
-
-            background_type = (
-                st.session_state.get(
-                    "background_type",
-                    BACKGROUND_PERSONAL_COLOR
-                )
-            )
-
-            with st.spinner(
-                "Editing uploaded photos..."
-            ):
-                image_edit_result = (
-                    process_images(
-                        images=images,
-                        edit_option=edit_option,
-                        image_adjustments=(
-                            image_adjustments
-                        ),
-                        background_type=(
-                            background_type
-                        ),
-                        color_analysis_result=(
-                            color_analysis_result
-                        )
-                    )
-                )
-
-            if image_edit_result["success"]:
-                st.session_state[
-                    "image_edit_result"
-                ] = image_edit_result
-
-                go_to_page(
-                    "image_edit_result"
-                )
-
-            else:
-                st.error(
-                    "이미지를 편집하지 못했습니다."
-                )
-
-                for item in image_edit_result[
-                    "results"
-                ]:
-                    if not item["success"]:
-                        st.warning(
-                            f'Photo '
-                            f'{item["image_index"] + 1}: '
-                            f'{item.get("message", "Unknown error")}'
-                        )
-
-    if st.button(
-        "Clear uploaded photos",
-        use_container_width=True,
-        key="clear_uploaded_photos"
-    ):
-        reset_analysis()
-
-        keys_to_remove = [
-            "uploaded_images",
-            "uploaded_file_signature",
-            "analysis_result",
-            "color_analysis_result",
-            "image_edit_result",
-            "image_adjustments",
-            "edit_option",
-            "background_type",
-            "brightness_slider",
-            "saturation_slider",
-            "sharpness_slider"
-        ]
-
-        for key in keys_to_remove:
-            st.session_state.pop(
-                key,
-                None
-            )
-
-        st.session_state[
-            "uploader_version"
-        ] = (
-            st.session_state.get(
-                "uploader_version",
-                0
-            ) + 1
-        )
-
-        st.rerun()
