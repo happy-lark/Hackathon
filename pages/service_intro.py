@@ -4,150 +4,168 @@ from utils.navigation import go_to_page
 
 
 def show_service_intro_page():
+    # =========================
+    # 상단 브랜드
+    # =========================
     st.markdown(
-        """
-        <div style="
-            text-align: center;
-            padding-top: 25px;
-            padding-bottom: 20px;
-        ">
-            <h1>✨ Meet PersonaLab</h1>
-            <p style="
-                font-size: 18px;
-                color: #666666;
-                line-height: 1.7;
-            ">
-                PersonaLab analyzes the impression conveyed by your photo
-                and helps you create an image that better matches
-                your intended persona.
-            </p>
-        </div>
-        """,
+        '<div class="intro-brand">'
+        '<span class="intro-brand-icon">P</span>'
+        '<span class="intro-brand-name">PersonaLab</span>'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    st.divider()
-
-    st.subheader(
-        "How PersonaLab Works"
+    st.markdown(
+        '<div class="intro-divider"></div>',
+        unsafe_allow_html=True
     )
 
-    step1, step2, step3 = st.columns(3)
+    # =========================
+    # 페이지 제목
+    # =========================
+    st.markdown(
+        '<div class="intro-header">'
+        '<div class="intro-title">AI Image Branding Coach</div>'
+        '<div class="intro-description">'
+        '<span>PersonaLab helps you present your best self online.</span>'
+        '<strong>We don’t judge you.</strong>'
+        '<span>We help you show the image you want to present.</span>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
-    with step1:
+    # =========================
+    # DO / DON'T 비교
+    # =========================
+    dont_column, do_column = st.columns(
+        2,
+        gap="large"
+    )
+
+    with dont_column:
         st.markdown(
-            """
-            <div style="
-                padding: 22px;
-                min-height: 210px;
-                border: 1px solid #E5E5E5;
-                border-radius: 16px;
-                text-align: center;
-            ">
-                <div style="font-size: 40px;">🎯</div>
-                <h3>1. Choose Your Goal</h3>
-                <p style="color: #666666;">
-                    Select the situation and define
-                    the impression you want to convey.
-                </p>
-            </div>
-            """,
+            '<div class="intro-compare-card intro-dont-card">'
+            '<div class="intro-card-title intro-dont-title">'
+            'What We DON’T Do'
+            '</div>'
+            '<div class="intro-list">'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-x">×</span>'
+            '<span>Judge your personality</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-x">×</span>'
+            '<span>Rate your looks</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-x">×</span>'
+            '<span>Generate a new face</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-x">×</span>'
+            '<span>Over-edit your photo</span>'
+            '</div>'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True
         )
 
-    with step2:
+    with do_column:
         st.markdown(
-            """
-            <div style="
-                padding: 22px;
-                min-height: 210px;
-                border: 1px solid #E5E5E5;
-                border-radius: 16px;
-                text-align: center;
-            ">
-                <div style="font-size: 40px;">📷</div>
-                <h3>2. Upload Photos</h3>
-                <p style="color: #666666;">
-                    Upload one or more photos
-                    showing your facial expression and style.
-                </p>
-            </div>
-            """,
+            '<div class="intro-compare-card intro-do-card">'
+            '<div class="intro-card-title intro-do-title">'
+            'What We DO'
+            '</div>'
+            '<div class="intro-list">'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-check">✓</span>'
+            '<span>Analyze visual elements</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-check">✓</span>'
+            '<span>Match your photo with your goal</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-check">✓</span>'
+            '<span>Recommend the best photo</span>'
+            '</div>'
+            '<div class="intro-list-item">'
+            '<span class="intro-list-icon intro-check">✓</span>'
+            '<span>Optimize your image naturally</span>'
+            '</div>'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True
         )
 
-    with step3:
+    # =========================
+    # 서비스 가치
+    # =========================
+    st.markdown(
+        '<div class="intro-values-heading">'
+        'Built on AI. Designed for You.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    privacy_column, ai_column, real_column = st.columns(
+        3,
+        gap="large"
+    )
+
+    with privacy_column:
         st.markdown(
-            """
-            <div style="
-                padding: 22px;
-                min-height: 210px;
-                border: 1px solid #E5E5E5;
-                border-radius: 16px;
-                text-align: center;
-            ">
-                <div style="font-size: 40px;">✨</div>
-                <h3>3. Analyze & Improve</h3>
-                <p style="color: #666666;">
-                    Compare your detected persona with your target
-                    and receive personalized suggestions.
-                </p>
-            </div>
-            """,
+            '<div class="intro-value-item">'
+            '<div class="intro-value-icon">🛡️</div>'
+            '<div class="intro-value-title">Privacy First</div>'
+            '<div class="intro-value-description">'
+            'Your photos stay secure.'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True
         )
 
-    st.divider()
-
-    st.subheader(
-        "Available Features"
-    )
-
-    feature1, feature2 = st.columns(2)
-
-    with feature1:
+    with ai_column:
         st.markdown(
-            """
-            ### 🧠 Persona Analysis
-
-            Analyze impressions such as:
-
-            - Trustworthy
-            - Confident
-            - Professional
-            - Approachable
-            """
+            '<div class="intro-value-item">'
+            '<div class="intro-value-icon">☀️</div>'
+            '<div class="intro-value-title">AI-Powered</div>'
+            '<div class="intro-value-description">'
+            'Advanced image analysis.'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True
         )
 
-    with feature2:
+    with real_column:
         st.markdown(
-            """
-            ### 🎨 Photo Enhancement
-
-            Improve your photos with:
-
-            - Personal color analysis
-            - Background color replacement
-            - Forest, ocean, and nature backgrounds
-            - Custom background uploads
-            """
+            '<div class="intro-value-item">'
+            '<div class="intro-value-icon">👤</div>'
+            '<div class="intro-value-title">Real You</div>'
+            '<div class="intro-value-description">'
+            'We keep your image authentic.'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True
         )
 
-    st.info(
-        "PersonaLab provides AI-based visual feedback. "
-        "Results may vary depending on lighting, facial angle, "
-        "photo quality, and background."
+    # =========================
+    # 하단 버튼
+    # =========================
+    st.markdown(
+        '<div class="intro-button-space"></div>',
+        unsafe_allow_html=True
     )
 
-    st.write("")
-
-    back_column, start_column = st.columns(
-        [1, 2]
+    back_column, empty_column, start_column = st.columns(
+        [1, 0.4, 2]
     )
 
     with back_column:
         if st.button(
             "← Back",
+            key="intro_back_button",
             use_container_width=True
         ):
             go_to_page(
@@ -156,7 +174,8 @@ def show_service_intro_page():
 
     with start_column:
         if st.button(
-            "Get Started →",
+            "Set My Goal →",
+            key="intro_start_button",
             type="primary",
             use_container_width=True
         ):
