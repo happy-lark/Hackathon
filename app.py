@@ -11,6 +11,7 @@ from pages.result import show_result_page
 from pages.personal_color import show_personal_color_page
 from pages.image_edit_result import show_image_edit_result_page
 from pages.ai_analysis import show_ai_analysis_page
+from pages.photo_comparison import show_photo_comparison_page
 
 st.set_page_config(
     page_title="PersonaLab",
@@ -42,6 +43,7 @@ PAGE_ROUTES = {
     "result": show_result_page,
     "personal_color": show_personal_color_page,
     "image_edit_result": show_image_edit_result_page,
+    "photo_comparison": show_photo_comparison_page,
 }
 
 

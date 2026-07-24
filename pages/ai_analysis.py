@@ -73,13 +73,17 @@ def render_placeholder_html(
 
 def reset_analysis_state():
     """
-    기존 분석 상태와 결과를 초기화합니다.
+    기존 분석 상태와 사진 순위 결과를 초기화합니다.
     """
 
     keys_to_remove = [
         "analysis_result",
         "analysis_status",
-        "analysis_error_result"
+        "analysis_error_result",
+        "photo_ranking",
+        "best_photo_index",
+        "selected_photo_index",
+        "best_match_score"
     ]
 
     for key in keys_to_remove:
@@ -338,7 +342,7 @@ def show_privacy_card():
 
 def show_analysis_finished():
     """
-    분석 완료 안내와 Result 이동 버튼을 표시합니다.
+    분석 완료 안내와 Photo Comparison 이동 버튼을 표시합니다.
     """
 
     render_html(
@@ -355,7 +359,8 @@ def show_analysis_finished():
 
                 <div class="analysis-finished-description">
                     Your photos have been successfully analyzed.
-                    Continue to view your personalized results.
+                    Continue to see which photo best matches
+                    your target persona.
                 </div>
             </div>
         </div>
@@ -367,12 +372,14 @@ def show_analysis_finished():
     )
 
     if st.button(
-        "Continue to Results",
+        "View Photo Ranking",
         type="primary",
         use_container_width=True,
         key="analysis_continue_button"
     ):
-        go_to_page("result")
+        go_to_page(
+            "photo_comparison"
+        )
 
 
 def show_analysis_error(
@@ -428,7 +435,6 @@ def show_analysis_error(
             key="analysis_retry_button"
         ):
             reset_analysis_state()
-
             st.rerun()
 
     with back_column:
@@ -438,7 +444,6 @@ def show_analysis_error(
             key="analysis_back_upload_button"
         ):
             reset_analysis_state()
-
             go_to_page("upload")
 
 
@@ -563,6 +568,21 @@ def run_analysis(images):
         None
     )
 
+    # 새 분석 결과가 만들어졌으므로
+    # 이전 사진 순위 결과는 제거합니다.
+    ranking_keys = [
+        "photo_ranking",
+        "best_photo_index",
+        "selected_photo_index",
+        "best_match_score"
+    ]
+
+    for key in ranking_keys:
+        st.session_state.pop(
+            key,
+            None
+        )
+
     render_analysis_visual(
         placeholder=visual_placeholder,
         progress=100,
@@ -641,12 +661,10 @@ def show_ai_analysis_page():
             key="analysis_no_images_back"
         ):
             reset_analysis_state()
-
             go_to_page("upload")
 
         return
 
-    # 제목과 진행 원 사이의 여백
     render_html(
         '<div class="analysis-content-space"></div>'
     )

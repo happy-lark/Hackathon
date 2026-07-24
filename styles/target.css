@@ -462,3 +462,79 @@
         height: 68px;
     }
 }
+
+/* ========================================
+   슬라이더 Persona 색상 표시
+======================================== */
+
+.target-slider-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.target-slider-color {
+    display: inline-block;
+
+    flex-shrink: 0;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 3px
+        rgba(100, 90, 180, 0.07);
+}
+
+
+/* ========================================
+   Persona 색상 범례
+======================================== */
+
+.target-summary-legend {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+
+    margin-top: 22px;
+}
+
+.target-legend-item {
+    display: grid;
+    grid-template-columns:
+        12px
+        minmax(0, 1fr)
+        auto;
+    align-items: center;
+    gap: 8px;
+
+    min-width: 0;
+
+    color: #5f5c70;
+
+    font-size: 12px;
+}
+
+.target-legend-color {
+    display: inline-block;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+}
+
+.target-legend-name {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.target-legend-value {
+    color: #302d47;
+
+    font-weight: 750;
+}
