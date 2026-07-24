@@ -15,7 +15,6 @@ def get_face_bounds(landmarks, width, height):
     """
     얼굴 랜드마크를 기준으로 얼굴 영역의 좌표를 구합니다.
     """
-
     x_values = [
         landmark.x * width
         for landmark in landmarks
@@ -55,11 +54,7 @@ def extract_cheek_regions(
 ):
     """
     얼굴 영역 안에서 왼쪽과 오른쪽 볼 부분을 추출합니다.
-
-    눈, 입술, 머리카락의 영향을 줄이기 위해
-    얼굴 중앙 아래쪽의 작은 영역만 사용합니다.
     """
-
     left, top, right, bottom = face_bounds
 
     face_width = right - left
@@ -130,11 +125,7 @@ def extract_cheek_regions(
 def calculate_skin_color(cheek_regions):
     """
     볼 영역에서 피부색의 대표 RGB 값을 계산합니다.
-
-    평균값보다 조명 반사와 그림자의 영향을 덜 받도록
-    중앙값을 사용합니다.
     """
-
     if not cheek_regions:
         return None
 
@@ -146,7 +137,6 @@ def calculate_skin_color(cheek_regions):
         axis=0
     ).astype(np.float32)
 
-    # 지나치게 어둡거나 밝은 픽셀 제거
     brightness = pixels.mean(
         axis=1
     )
@@ -175,7 +165,6 @@ def calculate_color_features(skin_color):
     """
     대표 피부색을 이용해 밝기, 채도, 웜/쿨 지표를 계산합니다.
     """
-
     red = skin_color["r"]
     green = skin_color["g"]
     blue = skin_color["b"]
@@ -190,7 +179,6 @@ def calculate_color_features(skin_color):
         *normalized_rgb
     )
 
-    # 붉은색과 노란색 계열이 강할수록 높아지는 단순 지표
     warmth = (
         (red - blue) * 0.65
         + (green - blue) * 0.35
@@ -232,13 +220,7 @@ def calculate_color_features(skin_color):
 def classify_personal_color(features):
     """
     색상 특징을 기반으로 계절 타입을 추정합니다.
-
-    Warm + Bright  -> Spring
-    Warm + Deep    -> Autumn
-    Cool + Bright  -> Summer
-    Cool + Deep    -> Winter
     """
-
     brightness = features[
         "Brightness"
     ]
@@ -337,9 +319,7 @@ def classify_personal_color(features):
         "season": season,
         "undertone": undertone,
         "description": description,
-        "recommended_colors": (
-            recommended_colors
-        ),
+        "recommended_colors": recommended_colors,
         "confidence": confidence
     }
 
@@ -351,13 +331,9 @@ def analyze_personal_color(
     얼굴 볼 영역의 색상을 분석해
     퍼스널 컬러 타입을 추정합니다.
     """
-
     try:
         image = image.convert("RGB")
-
-        image_array = np.asarray(
-            image
-        )
+        image_array = np.asarray(image)
 
         image_array = np.ascontiguousarray(
             image_array
@@ -446,28 +422,104 @@ def analyze_personal_color(
         skin_color
     )
 
-    classification = (
-        classify_personal_color(
-            color_features
-        )
+    classification = classify_personal_color(
+        color_features
     )
 
     return {
         "success": True,
-        "season": classification[
-            "season"
-        ],
-        "undertone": classification[
-            "undertone"
-        ],
-        "description": classification[
-            "description"
-        ],
+        "season": classification["season"],
+        "undertone": classification["undertone"],
+        "description": classification["description"],
         "recommended_colors": classification[
             "recommended_colors"
         ],
-        "confidence": classification[
-            "confidence"
-        ],
+        "confidence": classification["confidence"],
         "color_features": color_features
+    }
+
+
+def analyze_multiple_personal_colors(images):
+    """
+    여러 사진의 색상 특징을 평균 내어
+    하나의 퍼스널컬러 결과를 생성합니다.
+    """
+    individual_results = []
+    valid_results = []
+    failed_results = []
+
+    for index, image in enumerate(images):
+        result = analyze_personal_color(
+            image
+        )
+
+        result_with_index = {
+            "image_index": index,
+            **result
+        }
+
+        individual_results.append(
+            result_with_index
+        )
+
+        if result["success"]:
+            valid_results.append(
+                result_with_index
+            )
+
+        else:
+            failed_results.append(
+                result_with_index
+            )
+
+    if not valid_results:
+        return {
+            "success": False,
+            "message": (
+                "퍼스널컬러를 분석할 수 있는 사진이 없습니다. "
+                "자연광에서 촬영한 얼굴 사진을 사용해주세요."
+            ),
+            "individual_results": individual_results,
+            "valid_count": 0,
+            "failed_count": len(failed_results),
+            "total_count": len(images)
+        }
+
+    averaged_skin_color = {
+        "r": float(np.mean([
+            result["color_features"]["Red"]
+            for result in valid_results
+        ])),
+        "g": float(np.mean([
+            result["color_features"]["Green"]
+            for result in valid_results
+        ])),
+        "b": float(np.mean([
+            result["color_features"]["Blue"]
+            for result in valid_results
+        ]))
+    }
+
+    averaged_features = calculate_color_features(
+        averaged_skin_color
+    )
+
+    classification = classify_personal_color(
+        averaged_features
+    )
+
+    return {
+        "success": True,
+        "season": classification["season"],
+        "undertone": classification["undertone"],
+        "description": classification["description"],
+        "recommended_colors": classification[
+            "recommended_colors"
+        ],
+        "confidence": classification["confidence"],
+        "color_features": averaged_features,
+        "individual_results": individual_results,
+        "valid_count": len(valid_results),
+        "failed_count": len(failed_results),
+        "total_count": len(images)
     }

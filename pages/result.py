@@ -12,6 +12,14 @@ from components.feature_bar import render_all_feature_bars
 from components.resume_styling import split_resume_colors
 from components.full_report import generate_full_report
 
+from pages.upload import (
+    show_image_edit_options,
+    EDIT_NONE,
+    EDIT_BACKGROUND,
+    EDIT_BOTH,
+    BACKGROUND_PERSONAL_COLOR,
+)
+from analysis.image_editor import process_images
 
 def calculate_match_score(
     comparison_dataframe
@@ -20,7 +28,6 @@ def calculate_match_score(
     Target과 Detected의 평균 절대 차이를 기반으로
     Match Score를 계산합니다.
     """
-
     average_difference = (
         comparison_dataframe["Difference"]
         .abs()
@@ -41,7 +48,6 @@ def generate_feedback(comparison_dataframe):
     Target Persona와 Detected Persona의 차이를 바탕으로
     간단한 피드백을 생성합니다.
     """
-
     largest_gap_row = comparison_dataframe.iloc[
         comparison_dataframe["Difference"]
         .abs()
@@ -53,7 +59,7 @@ def generate_feedback(comparison_dataframe):
 
     if abs(difference) < 5:
         return (
-            "목표 Persona와 실제 사진의 인상이 "
+            "목표 Persona와 여러 사진에서 확인된 인상이 "
             "전반적으로 잘 일치합니다."
         )
 
@@ -104,6 +110,72 @@ def generate_feedback(comparison_dataframe):
     }
 
     return feedback_by_persona[persona]
+
+
+def show_uploaded_images(images):
+    """
+    분석에 사용한 여러 사진을 표시합니다.
+    """
+    columns = st.columns(3)
+
+    for index, image in enumerate(images):
+        with columns[index % 3]:
+            st.image(
+                image,
+                caption=f"Photo {index + 1}",
+                use_container_width=True
+            )
+
+
+def show_individual_results(
+    analysis_result
+):
+    """
+    각 사진의 개별 분석 결과를 표시합니다.
+    """
+    individual_results = analysis_result.get(
+        "individual_results",
+        []
+    )
+
+    if not individual_results:
+        return
+
+    with st.expander(
+        "View individual photo results"
+    ):
+        for item in individual_results:
+            photo_number = (
+                item["image_index"] + 1
+            )
+
+            st.markdown(
+                f"#### Photo {photo_number}"
+            )
+
+            if not item["success"]:
+                st.error(
+                    item["message"]
+                )
+
+                continue
+
+            individual_dataframe = pd.DataFrame(
+                {
+                    "Persona": list(
+                        item["detected_persona"].keys()
+                    ),
+                    "Score": list(
+                        item["detected_persona"].values()
+                    )
+                }
+            )
+
+            st.dataframe(
+                individual_dataframe,
+                use_container_width=True,
+                hide_index=True
+            )
 
 
 def show_result_page():
@@ -159,39 +231,64 @@ def show_result_page():
         unsafe_allow_html=True
     )
 
-    if "uploaded_image" in st.session_state:
-        st.image(
-            st.session_state[
-                "uploaded_image"
-            ],
-            caption="Analyzed Photo",
-            use_container_width=True
+    uploaded_images = st.session_state.get(
+        "uploaded_images",
+        []
+    )
+
+    if uploaded_images:
+        show_uploaded_images(
+            uploaded_images
+        )
+
+    valid_count = analysis_result.get(
+        "valid_count",
+        1
+    )
+
+    total_count = analysis_result.get(
+        "total_count",
+        valid_count
+    )
+
+    failed_count = analysis_result.get(
+        "failed_count",
+        0
+    )
+
+    if failed_count > 0:
+        st.warning(
+            f"{total_count}장 중 {valid_count}장의 사진을 "
+            "종합 분석했습니다. "
+            f"{failed_count}장은 분석에서 제외되었습니다."
+        )
+
+    else:
+        st.success(
+            f"{valid_count}장의 사진을 종합 분석했습니다."
         )
 
     st.divider()
 
-    # 얼굴 특징 분석
     st.subheader(
-        "🔍 Facial Feature Analysis"
+        "🔍 Average Facial Feature Analysis"
     )
 
     render_all_feature_bars(features)
 
     st.caption(
-        "미소, 눈 개방도, 얼굴 정면도, "
-        "고개 수평도, 입의 안정성 및 "
-        "사진 속 얼굴 위치를 측정한 결과입니다."
+        "각 사진에서 측정한 미소, 눈 개방도, 얼굴 정면도, "
+        "고개 수평도, 입의 안정성 및 얼굴 위치의 평균입니다."
     )
 
     st.divider()
 
-    # Detected Persona
     st.subheader(
-        "🧑 Detected Persona"
+        "🧑 Combined Detected Persona"
     )
 
-    column1, column2, column3, column4 = st.columns(
-        4
+    column1, column2, column3, column4 = (
+        st.columns(4)
     )
 
     column1.metric(
@@ -231,9 +328,12 @@ def show_result_page():
         )
     )
 
+    show_individual_results(
+        analysis_result
+    )
+
     st.divider()
 
-    # Target vs Detected
     st.subheader(
         "🎯 Target vs Detected"
     )
@@ -358,18 +458,62 @@ def show_result_page():
         st.write(f"**의상 추천**: {resume_recommendation['clothing_advice']}")
         st.caption(f"💡 {resume_recommendation['keyword_tip']}")
     
+    #show_image_edit_results()
+
     st.markdown(
         """
         <div class="result-notice">
             이 결과는 사람의 실제 성격, 능력, 지능 또는 직업을
-            판단한 것이 아닙니다. 사진에서 관찰되는 미소, 눈의
-            개방도, 얼굴 방향과 위치를 바탕으로 계산한 시각적
-            인상 분석 결과입니다.
+            판단한 것이 아닙니다. 여러 사진에서 관찰되는 미소,
+            눈의 개방도, 얼굴 방향과 위치를 바탕으로 계산한
+            시각적 인상 분석 결과입니다.
         </div>
         """,
         unsafe_allow_html=True
     )
+    st.divider()
+    show_image_edit_options()
 
+    edit_option = st.session_state.get("edit_option", EDIT_NONE)
+
+    edit_clicked = st.button(
+        "🪄 Edit Photos",
+        use_container_width=True,
+        disabled=(edit_option == EDIT_NONE),
+    )
+
+    if edit_clicked:
+        uses_background = edit_option in [EDIT_BACKGROUND, EDIT_BOTH]
+        color_analysis_result = analysis_result.get("personal_color")
+
+        if uses_background and not color_analysis_result:
+            st.warning("배경을 변경하려면 Personal Color 분석 결과가 필요합니다.")
+        else:
+            image_adjustments = st.session_state.get(
+                "image_adjustments",
+                {"brightness": 1.0, "saturation": 1.0, "sharpness": 1.0}
+            )
+            background_type = st.session_state.get("background_type", BACKGROUND_PERSONAL_COLOR)
+            images = st.session_state.get("uploaded_images", [])
+
+            with st.spinner("Editing uploaded photos..."):
+                image_edit_result = process_images(
+                    images=images,
+                    edit_option=edit_option,
+                    image_adjustments=image_adjustments,
+                    background_type=background_type,
+                    color_analysis_result=color_analysis_result,
+                )
+
+            if image_edit_result["success"]:
+                st.session_state["image_edit_result"] = image_edit_result
+                go_to_page("image_edit_result")
+            else:
+                st.error("이미지를 편집하지 못했습니다.")
+                for item in image_edit_result["results"]:
+                    if not item["success"]:
+                        st.warning(f'Photo {item["image_index"]+1}: {item.get("message","Unknown error")}')
+                        
     st.write("")
 
     back_column, space, restart_column = st.columns(
