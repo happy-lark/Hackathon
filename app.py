@@ -10,7 +10,7 @@ from pages.upload import show_upload_page
 from pages.result import show_result_page
 from pages.personal_color import show_personal_color_page
 from pages.image_edit_result import show_image_edit_result_page
-
+from pages.ai_analysis import show_ai_analysis_page
 
 st.set_page_config(
     page_title="PersonaLab",
@@ -38,6 +38,7 @@ PAGE_ROUTES = {
     "service_intro": show_service_intro_page,
     "target": show_target_page,
     "upload": show_upload_page,
+    "ai_analysis": show_ai_analysis_page,
     "result": show_result_page,
     "personal_color": show_personal_color_page,
     "image_edit_result": show_image_edit_result_page,

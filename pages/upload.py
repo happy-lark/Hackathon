@@ -3,9 +3,6 @@ import streamlit as st
 from PIL import Image
 from textwrap import dedent
 
-from analysis.analyzer import (
-    analyze_multiple_face_personas
-)
 from utils.navigation import go_to_page
 
 
@@ -289,73 +286,6 @@ def show_image_errors(image_errors):
             f'({error["filename"]}) could not be opened.'
         )
 
-
-def run_persona_analysis(images):
-    """
-    업로드한 사진의 Persona 분석을 실행합니다.
-    """
-
-    with st.spinner(
-        "Analyzing all uploaded photos..."
-    ):
-        analysis_result = (
-            analyze_multiple_face_personas(
-                images
-            )
-        )
-
-    if analysis_result.get(
-        "success",
-        False
-    ):
-        st.session_state[
-            "analysis_result"
-        ] = analysis_result
-
-        go_to_page("result")
-
-        return
-
-    st.session_state.pop(
-        "analysis_result",
-        None
-    )
-
-    error_message = analysis_result.get(
-        "message",
-        "The photos could not be analyzed."
-    )
-
-    st.error(error_message)
-
-    individual_results = analysis_result.get(
-        "individual_results",
-        []
-    )
-
-    for item in individual_results:
-        if not item.get(
-            "success",
-            False
-        ):
-            image_index = (
-                item.get(
-                    "image_index",
-                    0
-                )
-                + 1
-            )
-
-            message = item.get(
-                "message",
-                "The face could not be detected."
-            )
-
-            st.warning(
-                f"Photo {image_index}: {message}"
-            )
-
-
 def show_upload_page():
     """
     Step 3. 사진 업로드 페이지입니다.
@@ -519,6 +449,9 @@ def show_upload_page():
     )
 
     if continue_clicked:
-        run_persona_analysis(
-            images
-        )
+        st.session_state.pop(
+        "result",
+        None
+    )
+        go_to_page("ai_analysis")
+        
