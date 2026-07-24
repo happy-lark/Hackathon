@@ -1,7 +1,6 @@
 import streamlit as st
 
 from pages.landing import show_landing_page
-from pages.mode import show_mode_page
 from pages.target import show_target_page
 from pages.upload import show_upload_page
 from pages.result import show_result_page
@@ -53,9 +52,6 @@ if current_page == "landing":
     
 elif current_page == "service_intro":
     show_service_intro_page()
-
-elif current_page == "mode":
-    show_mode_page()
 
 elif current_page == "target":
     show_target_page()
