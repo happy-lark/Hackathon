@@ -33,8 +33,6 @@ PROJECT_ROOT = (
 )
 
 
-# 새 로딩 로봇 이미지
-# 프로젝트 폴더의 assets/loading_img_cutout.png를 사용합니다.
 MASCOT_PATH = (
     PROJECT_ROOT
     / "assets"
@@ -52,12 +50,16 @@ ANALYSIS_STEPS = [
 ]
 
 
+ANALYSIS_TIPS = [
+    "Use clear, well-lit photos",
+    "Make sure your face is clearly visible",
+    "Avoid group photos or heavy filters"
+]
+
+
 def clean_html(html_content):
     """
     HTML의 들여쓰기와 불필요한 줄바꿈을 제거합니다.
-
-    Streamlit에서 HTML이 코드 블록으로 표시되는
-    문제를 방지합니다.
     """
 
     return " ".join(
@@ -232,8 +234,6 @@ def get_mascot_html():
 def show_progress_header():
     """
     Back 버튼과 상단 1~7단계 진행 상태를 표시합니다.
-
-    현재 AI Analysis 페이지는 Step 4입니다.
     """
 
     (
@@ -442,33 +442,6 @@ def update_analysis_screen(
         placeholder=steps_placeholder,
         active_step=active_step
     )
-
-
-def show_privacy_card():
-    """
-    개인정보 보호 안내 카드를 표시합니다.
-    """
-
-    render_html(
-        """
-        <div class="analysis-privacy-card">
-            <div class="analysis-privacy-icon">
-                ♙
-            </div>
-
-            <div>
-                <div class="analysis-privacy-title">
-                    Your photos are safe and private.
-                </div>
-
-                <div class="analysis-privacy-description">
-                    We only use them for analysis.
-                </div>
-            </div>
-        </div>
-        """
-    )
-
 
 def show_analysis_finished():
     """
@@ -917,5 +890,3 @@ def show_ai_analysis_page():
                 show_analysis_error(
                     analysis_error_result
                 )
-
-        show_privacy_card()
