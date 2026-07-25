@@ -1,7 +1,7 @@
 """
 pages/photo_editor.py
 
-Step 6. Optimize Your Photo
+Step 7. Optimize Your Photo
 
 역할:
 - 선택된 사진 불러오기
@@ -25,6 +25,10 @@ from analysis.image_editor import (
     process_images
 )
 from utils.navigation import go_to_page
+
+
+TOTAL_STEPS = 7
+CURRENT_STEP = 7
 
 
 BACKGROUND_OPTIONS = [
@@ -97,16 +101,72 @@ def render_html(html_content):
     )
 
 
+def build_progress_html():
+    """
+    현재 단계에 맞춰 1~7 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span class="photo-editor-progress-dot {state_class}">
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span
+                    class="photo-editor-progress-line {line_class}"
+                ></span>
+                """
+            )
+
+    return "".join(
+        progress_parts
+    )
+
+
 def extract_pil_image(image_item):
     """
     session_state에 저장된 여러 이미지 형식에서
     PIL 이미지를 추출합니다.
     """
 
-    if isinstance(image_item, Image.Image):
-        return image_item.convert("RGB")
+    if isinstance(
+        image_item,
+        Image.Image
+    ):
+        return image_item.convert(
+            "RGB"
+        )
 
-    if isinstance(image_item, dict):
+    if isinstance(
+        image_item,
+        dict
+    ):
         possible_keys = [
             "image",
             "original_image",
@@ -115,10 +175,17 @@ def extract_pil_image(image_item):
         ]
 
         for key in possible_keys:
-            image = image_item.get(key)
+            image = image_item.get(
+                key
+            )
 
-            if isinstance(image, Image.Image):
-                return image.convert("RGB")
+            if isinstance(
+                image,
+                Image.Image
+            ):
+                return image.convert(
+                    "RGB"
+                )
 
     return None
 
@@ -163,7 +230,9 @@ def get_selected_photo():
     )
 
     selected_image = extract_pil_image(
-        uploaded_images[selected_index]
+        uploaded_images[
+            selected_index
+        ]
     )
 
     if selected_image is None:
@@ -346,7 +415,8 @@ def slider_value_to_factor(
         min(
             1.5,
             1.0
-            + slider_value * 0.01
+            + slider_value
+            * 0.01
         )
     )
 
@@ -498,7 +568,9 @@ def run_photo_edit(
     except Exception as error:
         return {
             "success": False,
-            "message": str(error),
+            "message": str(
+                error
+            ),
             "image": original_image
         }
 
@@ -543,7 +615,9 @@ def run_photo_edit(
             "image": original_image
         }
 
-    first_result = result_items[0]
+    first_result = result_items[
+        0
+    ]
 
     edited_image = first_result.get(
         "edited_image"
@@ -556,14 +630,17 @@ def run_photo_edit(
         return {
             "success": False,
             "message": (
-                "The edited result is not a valid image."
+                "The edited result is not "
+                "a valid image."
             ),
             "image": original_image
         }
 
     return {
         "success": True,
-        "image": edited_image.convert("RGB"),
+        "image": edited_image.convert(
+            "RGB"
+        ),
         "descriptions": first_result.get(
             "descriptions",
             []
@@ -576,7 +653,9 @@ def run_photo_edit(
 
 def show_progress_header():
     """
-    상단 Back 버튼과 진행 단계를 표시합니다.
+    상단 Back 버튼과 1~7 진행 단계를 표시합니다.
+
+    현재 Photo Editor 페이지는 Step 7입니다.
     """
 
     (
@@ -584,7 +663,7 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.2, 4.2, 1.2],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
@@ -599,24 +678,9 @@ def show_progress_header():
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="photo-editor-progress">
-                <span class="photo-editor-progress-dot completed">1</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">2</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">3</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">4</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">5</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot active">6</span>
+                {build_progress_html()}
             </div>
             """
         )
@@ -634,7 +698,7 @@ def show_page_header():
         """
         <div class="photo-editor-header">
             <div class="photo-editor-title">
-                Step 6. Optimize Your Photo
+                Step 7. Optimize Your Photo
             </div>
 
             <div class="photo-editor-description">
@@ -661,10 +725,13 @@ def show_solid_color_options():
     render_html(
         f"""
         <div class="photo-editor-color-header">
-            <span>Recommended colors</span>
+            <span>
+                Recommended colors
+            </span>
 
             <small>
-                Based on {personal_color_season or "your photo"}
+                Based on
+                {personal_color_season or "your photo"}
             </small>
         </div>
         """
@@ -682,10 +749,6 @@ def show_solid_color_options():
         color_columns,
         color_names
     ):
-        hex_color = SOLID_COLOR_OPTIONS[
-            color_name
-        ]
-
         is_selected = (
             st.session_state.get(
                 "photo_editor_solid_color_name"
@@ -700,7 +763,10 @@ def show_solid_color_options():
 
         key_suffix = (
             color_name.lower()
-            .replace(" ", "_")
+            .replace(
+                " ",
+                "_"
+            )
         )
 
         with column:
@@ -735,7 +801,10 @@ def show_solid_color_options():
             render_html(
                 f"""
                 <div class="photo-editor-color-label">
-                    <span>{color_name}</span>
+                    <span>
+                        {color_name}
+                    </span>
+
                     {recommended_html}
                 </div>
                 """
@@ -834,12 +903,14 @@ def show_adjustment_options():
 
 def show_photo_editor_page():
     """
-    Step 6. Optimize Your Photo 페이지입니다.
+    Step 7. Optimize Your Photo 페이지입니다.
     """
 
     initialize_editor_state()
 
-    selected_photo = get_selected_photo()
+    selected_photo = (
+        get_selected_photo()
+    )
 
     if selected_photo is None:
         st.error(
@@ -880,7 +951,9 @@ def show_photo_editor_page():
         )
 
         with image_column:
-            image_placeholder = st.empty()
+            image_placeholder = (
+                st.empty()
+            )
 
         with option_column:
             (
@@ -889,7 +962,10 @@ def show_photo_editor_page():
             ) = show_background_options()
 
         render_html(
-            '<div class="photo-editor-adjustment-space"></div>'
+            """
+            <div class="photo-editor-adjustment-space">
+            </div>
+            """
         )
 
         image_adjustments = (
@@ -965,7 +1041,10 @@ def show_photo_editor_page():
                     )
 
         render_html(
-            '<div class="photo-editor-button-space"></div>'
+            """
+            <div class="photo-editor-button-space">
+            </div>
+            """
         )
 
         reset_column, apply_column = st.columns(
@@ -979,6 +1058,7 @@ def show_photo_editor_page():
                 key="photo_editor_reset_button"
             ):
                 reset_editor_state()
+
                 st.rerun()
 
         with apply_column:

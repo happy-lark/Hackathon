@@ -33,6 +33,12 @@
     transform: none;
 }
 
+.st-key-photo_editor_back button:focus {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
 
 /* ========================================
    진행 단계
@@ -44,6 +50,7 @@
     align-items: center;
 
     width: 100%;
+    padding: 4px 0;
 }
 
 .photo-editor-progress-dot {
@@ -73,8 +80,8 @@
 .photo-editor-progress-dot.active {
     background: linear-gradient(
         135deg,
-        #7049ef,
-        #5f3ee6
+        #7047ed,
+        #6847f5
     );
 
     color: #ffffff;
@@ -84,7 +91,7 @@
 }
 
 .photo-editor-progress-line {
-    width: 22px;
+    width: 20px;
     height: 2px;
 
     margin: 0 4px;
@@ -211,7 +218,7 @@ label[data-baseweb="radio"]:hover {
 label[data-baseweb="radio"]:has(
     input:checked
 ) {
-    border-color: #7653e9;
+    border-color: #7047ed;
 
     background: linear-gradient(
         145deg,
@@ -221,7 +228,7 @@ label[data-baseweb="radio"]:has(
 
     box-shadow:
         0 0 0 1px
-        rgba(118, 83, 233, 0.10);
+        rgba(112, 71, 237, 0.10);
 }
 
 
@@ -268,7 +275,12 @@ label[data-baseweb="radio"]:has(
 
     border-radius: 50%;
 
-    background-color: #6847f5;
+    background: linear-gradient(
+        135deg,
+        #7047ed,
+        #6847f5
+    );
+
     color: #ffffff;
 
     font-size: 12px;
@@ -379,7 +391,7 @@ label[data-baseweb="radio"] p {
     transform: translateY(-2px) scale(1.05);
 
     box-shadow:
-        0 0 0 2px #7653e9,
+        0 0 0 2px #7047ed,
         0 6px 14px rgba(80, 60, 180, 0.15);
 }
 
@@ -420,7 +432,7 @@ label[data-baseweb="radio"] p {
 
 
 /* ========================================
-   Adjustments
+   Adjustments 슬라이더
 ======================================== */
 
 .photo-editor-adjustment-space {
@@ -429,6 +441,9 @@ label[data-baseweb="radio"] p {
 
 [data-testid="stSlider"] {
     margin-bottom: 5px;
+
+    --slider-primary-color: #7047ed;
+    --slider-secondary-color: #6847f5;
 }
 
 [data-testid="stSlider"] label p {
@@ -439,50 +454,123 @@ label[data-baseweb="radio"] p {
 }
 
 
-/* 슬라이더 전체 Accent Color */
-
-[data-testid="stSlider"] {
-    --slider-color: #6847f5;
-}
-
-
-/* Slider thumb */
+/* 슬라이더 손잡이 */
 
 [data-testid="stSlider"]
 div[role="slider"] {
-    border-color: #6847f5 !important;
+    border: 2px solid #7047ed !important;
 
-    background-color: #6847f5 !important;
+    background: linear-gradient(
+        135deg,
+        #7047ed,
+        #6847f5
+    ) !important;
 
-    box-shadow: none !important;
+    box-shadow:
+        0 3px 8px
+        rgba(104, 71, 245, 0.25) !important;
 }
 
 
-/* Slider 숫자 */
+/* 슬라이더 손잡이 값 */
 
 [data-testid="stSlider"]
 div[role="slider"]
 + div {
     color: #6847f5 !important;
+
+    font-weight: 750 !important;
 }
 
 
-/*
-Streamlit 버전에 따라 내부 DOM이 달라질 수 있어
-아래 선택자도 함께 적용합니다.
-*/
+/* BaseWeb 슬라이더 내부 */
 
 [data-testid="stSlider"]
-div[data-baseweb="slider"]
-div[role="slider"] {
-    background: #6847f5 !important;
+div[data-baseweb="slider"] {
+    color: #6847f5 !important;
 }
+
+
+/* Streamlit 버전에 따른 채워진 Track 대응 */
 
 [data-testid="stSlider"]
 div[data-baseweb="slider"]
 > div
 > div:first-child {
-    background-color: #6847f5 !important;
+    background: linear-gradient(
+        90deg,
+        #7047ed,
+        #6847f5
+    ) !important;
+}
+
+[data-testid="stSlider"]
+div[data-baseweb="slider"]
+> div
+> div:nth-child(2) {
+    background-color: #e7e1f8 !important;
+}
+
+
+/* 최신 Streamlit Track 선택자 */
+
+[data-testid="stSlider"]
+[data-testid="stSliderTrack"]
+> div:first-child {
+    background: linear-gradient(
+        90deg,
+        #7047ed,
+        #6847f5
+    ) !important;
+}
+
+[data-testid="stSlider"]
+[data-testid="stSliderTrack"] {
+    background-color: #e7e1f8 !important;
+}
+
+
+/* 각 Photo Editor 슬라이더에 한정해 적용 */
+
+.st-key-photo_editor_brightness
+div[role="slider"],
+.st-key-photo_editor_contrast
+div[role="slider"],
+.st-key-photo_editor_saturation
+div[role="slider"],
+.st-key-photo_editor_sharpness
+div[role="slider"] {
+    border-color: #7047ed !important;
+
+    background: linear-gradient(
+        135deg,
+        #7047ed,
+        #6847f5
+    ) !important;
+}
+
+
+/* 슬라이더 최솟값·최댓값 */
+
+.st-key-photo_editor_brightness
+[data-testid="stSliderTickBarMin"],
+.st-key-photo_editor_contrast
+[data-testid="stSliderTickBarMin"],
+.st-key-photo_editor_saturation
+[data-testid="stSliderTickBarMin"],
+.st-key-photo_editor_sharpness
+[data-testid="stSliderTickBarMin"],
+.st-key-photo_editor_brightness
+[data-testid="stSliderTickBarMax"],
+.st-key-photo_editor_contrast
+[data-testid="stSliderTickBarMax"],
+.st-key-photo_editor_saturation
+[data-testid="stSliderTickBarMax"],
+.st-key-photo_editor_sharpness
+[data-testid="stSliderTickBarMax"] {
+    color: #8d899c;
+
+    font-size: 11px;
 }
 
 
@@ -583,7 +671,7 @@ div[data-baseweb="slider"]
 
 @media (max-width: 700px) {
     .photo-editor-progress-line {
-        width: 10px;
+        width: 8px;
 
         margin: 0 2px;
     }
@@ -612,5 +700,29 @@ div[data-baseweb="slider"]
         min-width: 30px;
         height: 30px;
         min-height: 30px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .photo-editor-progress-line {
+        width: 4px;
+
+        margin: 0 1px;
+    }
+
+    .photo-editor-progress-dot {
+        width: 23px;
+        height: 23px;
+
+        font-size: 10px;
+    }
+
+    .photo-editor-title {
+        font-size: 21px;
     }
 }
