@@ -26,10 +26,6 @@ from analysis.image_editor import (
 from utils.navigation import go_to_page
 
 
-# ========================================
-# Background 설정
-# ========================================
-
 BACKGROUND_OPTIONS = [
     "Original",
     "Blur",
@@ -40,8 +36,6 @@ BACKGROUND_OPTIONS = [
 ]
 
 
-# background_editor.py가 받는 실제 값과 다를 경우
-# 이 부분만 수정하면 됩니다.
 BACKGROUND_VALUE_MAP = {
     "Original": None,
     "Blur": "blur",
@@ -61,7 +55,7 @@ SOLID_COLOR_OPTIONS = {
 }
 
 
-DEFAULT_ADJUSTMENTS = {
+DEFAULT_IMAGE_ADJUSTMENTS = {
     "brightness": 1.0,
     "contrast": 1.0,
     "saturation": 1.0,
@@ -69,13 +63,9 @@ DEFAULT_ADJUSTMENTS = {
 }
 
 
-# ========================================
-# HTML 유틸
-# ========================================
-
 def clean_html(html_content):
     """
-    HTML이 코드 블록으로 보이지 않도록
+    HTML이 코드 블록으로 표시되지 않도록
     들여쓰기와 불필요한 줄바꿈을 제거합니다.
     """
 
@@ -99,14 +89,10 @@ def render_html(html_content):
     )
 
 
-# ========================================
-# 이미지 가져오기
-# ========================================
-
 def extract_pil_image(image_item):
     """
-    session_state에 저장된 여러 이미지 형식에서
-    실제 PIL 이미지를 추출합니다.
+    session_state에 저장된 이미지 데이터에서
+    PIL 이미지를 추출합니다.
     """
 
     if isinstance(image_item, Image.Image):
@@ -131,7 +117,7 @@ def extract_pil_image(image_item):
 
 def get_selected_photo():
     """
-    Photo Comparison에서 선택된 사진을 가져옵니다.
+    사용자가 선택한 사진을 가져옵니다.
 
     selected_photo_index가 없으면
     best_photo_index를 사용합니다.
@@ -186,34 +172,37 @@ def get_selected_photo():
 
 def get_color_analysis_result():
     """
-    Match Report에서 저장한 Personal Color 분석 결과를
-    background_editor에 전달할 형식으로 반환합니다.
+    Match Report에서 저장한 퍼스널 컬러 분석 결과를
+    background_editor.py에 전달합니다.
     """
 
     color_result = st.session_state.get(
         "match_report_color_result"
     )
 
-    if isinstance(color_result, dict):
-        raw_result = color_result.get(
-            "raw_result"
-        )
+    if not isinstance(
+        color_result,
+        dict
+    ):
+        return None
 
-        if isinstance(raw_result, dict):
-            return raw_result
+    raw_result = color_result.get(
+        "raw_result"
+    )
 
-        return color_result
+    if isinstance(
+        raw_result,
+        dict
+    ):
+        return raw_result
 
-    return None
+    return color_result
 
-
-# ========================================
-# Session state 초기화
-# ========================================
 
 def initialize_editor_state():
     """
-    Photo Editor에서 사용하는 위젯 상태를 초기화합니다.
+    Photo Editor 페이지에서 사용하는
+    session_state 값을 초기화합니다.
     """
 
     st.session_state.setdefault(
@@ -249,7 +238,7 @@ def initialize_editor_state():
 
 def reset_editor_state():
     """
-    배경과 이미지 보정 값을 기본값으로 초기화합니다.
+    모든 보정 옵션을 초기 상태로 되돌립니다.
     """
 
     st.session_state[
@@ -287,60 +276,67 @@ def reset_editor_state():
     )
 
 
-# ========================================
-# 보정값 변환
-# ========================================
-
-def adjustment_value_to_factor(
-    slider_value,
-    scale=0.01
+def slider_value_to_factor(
+    slider_value
 ):
     """
-    -30~30 슬라이더 값을 PIL 보정 배율로 변환합니다.
+    -30~30 슬라이더 값을
+    이미지 보정 배율로 변환합니다.
 
-    예:
-    15  → 1.15
     0   → 1.00
+    15  → 1.15
     -10 → 0.90
     """
+
+    try:
+        slider_value = float(
+            slider_value
+        )
+
+    except (TypeError, ValueError):
+        slider_value = 0.0
 
     return max(
         0.5,
         min(
             1.5,
             1.0
-            + float(slider_value)
-            * scale
+            + slider_value
+            * 0.01
         )
     )
 
 
 def build_image_adjustments():
     """
-    UI 슬라이더 값을 image_enhancer가 사용하는
-    배율 값으로 변환합니다.
+    UI 슬라이더 값을 image_editor.py에서 사용하는
+    보정 배율로 변환합니다.
     """
 
     return {
-        "brightness": adjustment_value_to_factor(
-            st.session_state[
-                "photo_editor_brightness"
-            ]
+        "brightness": slider_value_to_factor(
+            st.session_state.get(
+                "photo_editor_brightness",
+                0
+            )
         ),
-        "contrast": adjustment_value_to_factor(
-            st.session_state[
-                "photo_editor_contrast"
-            ]
+        "contrast": slider_value_to_factor(
+            st.session_state.get(
+                "photo_editor_contrast",
+                0
+            )
         ),
-        "saturation": adjustment_value_to_factor(
-            st.session_state[
-                "photo_editor_saturation"
-            ]
+        "saturation": slider_value_to_factor(
+            st.session_state.get(
+                "photo_editor_saturation",
+                0
+            )
         ),
-        "sharpness": adjustment_value_to_factor(
-            st.session_state[
-                "photo_editor_sharpness"
-            ]
+        "sharpness": slider_value_to_factor(
+            st.session_state.get(
+                "photo_editor_sharpness",
+                0
+            )
         )
     }
 
@@ -349,16 +345,16 @@ def adjustments_are_default(
     image_adjustments
 ):
     """
-    보정값이 모두 기본값 1.0인지 확인합니다.
+    보정값이 모두 기본값인지 확인합니다.
     """
 
     return all(
         abs(
             image_adjustments[key]
-            - DEFAULT_ADJUSTMENTS[key]
+            - DEFAULT_IMAGE_ADJUSTMENTS[key]
         )
         < 0.001
-        for key in DEFAULT_ADJUSTMENTS
+        for key in DEFAULT_IMAGE_ADJUSTMENTS
     )
 
 
@@ -367,8 +363,8 @@ def get_edit_option(
     image_adjustments
 ):
     """
-    배경 선택과 보정값에 따라
-    image_editor.py의 편집 옵션을 결정합니다.
+    선택한 배경과 보정값에 따라
+    편집 옵션을 결정합니다.
     """
 
     background_changed = (
@@ -376,8 +372,10 @@ def get_edit_option(
         != "Original"
     )
 
-    enhancement_changed = not adjustments_are_default(
-        image_adjustments
+    enhancement_changed = (
+        not adjustments_are_default(
+            image_adjustments
+        )
     )
 
     if (
@@ -400,7 +398,7 @@ def get_background_type(
     selected_solid_color
 ):
     """
-    UI에서 선택한 배경 옵션을
+    UI에서 선택한 배경값을
     background_editor.py에 전달할 값으로 변환합니다.
     """
 
@@ -418,10 +416,6 @@ def get_background_type(
     )
 
 
-# ========================================
-# 이미지 편집 실행
-# ========================================
-
 def run_photo_edit(
     original_image,
     selected_background,
@@ -429,7 +423,7 @@ def run_photo_edit(
     image_adjustments
 ):
     """
-    analysis/image_editor.py의 process_images를 호출합니다.
+    현재 설정을 사용해 사진을 편집합니다.
     """
 
     edit_option = get_edit_option(
@@ -446,21 +440,31 @@ def run_photo_edit(
         get_color_analysis_result()
     )
 
-    edit_result = process_images(
-        images=[
-            original_image
-        ],
-        edit_option=edit_option,
-        image_adjustments=image_adjustments,
-        background_type=background_type,
-        color_analysis_result=color_analysis_result
-    )
+    try:
+        edit_result = process_images(
+            images=[
+                original_image
+            ],
+            edit_option=edit_option,
+            image_adjustments=image_adjustments,
+            background_type=background_type,
+            color_analysis_result=(
+                color_analysis_result
+            )
+        )
+
+    except Exception as error:
+        return {
+            "success": False,
+            "message": str(error),
+            "image": original_image
+        }
 
     if not edit_result.get(
         "success",
         False
     ):
-        failed_results = edit_result.get(
+        result_items = edit_result.get(
             "results",
             []
         )
@@ -469,8 +473,8 @@ def run_photo_edit(
             "The photo could not be edited."
         )
 
-        if failed_results:
-            error_message = failed_results[
+        if result_items:
+            error_message = result_items[
                 0
             ].get(
                 "message",
@@ -479,7 +483,8 @@ def run_photo_edit(
 
         return {
             "success": False,
-            "message": error_message
+            "message": error_message,
+            "image": original_image
         }
 
     result_items = edit_result.get(
@@ -492,7 +497,8 @@ def run_photo_edit(
             "success": False,
             "message": (
                 "No edited image was returned."
-            )
+            ),
+            "image": original_image
         }
 
     first_result = result_items[0]
@@ -509,7 +515,8 @@ def run_photo_edit(
             "success": False,
             "message": (
                 "The edited result is not a valid image."
-            )
+            ),
+            "image": original_image
         }
 
     return {
@@ -525,13 +532,9 @@ def run_photo_edit(
     }
 
 
-# ========================================
-# Header
-# ========================================
-
 def show_progress_header():
     """
-    Back 버튼과 상단 진행 표시를 렌더링합니다.
+    Back 버튼과 진행 단계를 표시합니다.
     """
 
     (
@@ -556,44 +559,22 @@ def show_progress_header():
         render_html(
             """
             <div class="photo-editor-progress">
-                <span class="photo-editor-progress-dot completed">
-                    1
-                </span>
+                <span class="photo-editor-progress-dot completed">1</span>
+                <span class="photo-editor-progress-line completed"></span>
 
-                <span class="photo-editor-progress-line completed">
-                </span>
+                <span class="photo-editor-progress-dot completed">2</span>
+                <span class="photo-editor-progress-line completed"></span>
 
-                <span class="photo-editor-progress-dot completed">
-                    2
-                </span>
+                <span class="photo-editor-progress-dot completed">3</span>
+                <span class="photo-editor-progress-line completed"></span>
 
-                <span class="photo-editor-progress-line completed">
-                </span>
+                <span class="photo-editor-progress-dot completed">4</span>
+                <span class="photo-editor-progress-line completed"></span>
 
-                <span class="photo-editor-progress-dot completed">
-                    3
-                </span>
+                <span class="photo-editor-progress-dot completed">5</span>
+                <span class="photo-editor-progress-line completed"></span>
 
-                <span class="photo-editor-progress-line completed">
-                </span>
-
-                <span class="photo-editor-progress-dot completed">
-                    4
-                </span>
-
-                <span class="photo-editor-progress-line completed">
-                </span>
-
-                <span class="photo-editor-progress-dot completed">
-                    5
-                </span>
-
-                <span class="photo-editor-progress-line completed">
-                </span>
-
-                <span class="photo-editor-progress-dot active">
-                    6
-                </span>
+                <span class="photo-editor-progress-dot active">6</span>
             </div>
             """
         )
@@ -622,10 +603,6 @@ def show_page_header():
     )
 
 
-# ========================================
-# UI 옵션
-# ========================================
-
 def show_background_options():
     """
     배경 변경 옵션을 표시합니다.
@@ -645,13 +622,11 @@ def show_background_options():
     selected_solid_color = None
 
     if selected_background == "Solid Color":
-        color_names = list(
-            SOLID_COLOR_OPTIONS.keys()
-        )
-
         selected_color_name = st.radio(
             "Solid background color",
-            options=color_names,
+            options=list(
+                SOLID_COLOR_OPTIONS.keys()
+            ),
             horizontal=True,
             key="photo_editor_solid_color_name",
             label_visibility="collapsed"
@@ -667,6 +642,7 @@ def show_background_options():
             f"""
             <div class="photo-editor-selected-color">
                 Selected color:
+
                 <span
                     style="
                         display:inline-block;
@@ -679,6 +655,7 @@ def show_background_options():
                         vertical-align:middle;
                     "
                 ></span>
+
                 {selected_solid_color}
             </div>
             """
@@ -692,7 +669,7 @@ def show_background_options():
 
 def show_adjustment_options():
     """
-    밝기, 대비, 채도, 선명도 슬라이더를 표시합니다.
+    밝기, 대비, 채도, 선명도 옵션을 표시합니다.
     """
 
     st.markdown(
@@ -733,10 +710,6 @@ def show_adjustment_options():
 
     return build_image_adjustments()
 
-
-# ========================================
-# Main page
-# ========================================
 
 def show_photo_editor_page():
     """
@@ -785,12 +758,11 @@ def show_photo_editor_page():
             gap="large"
         )
 
+        # 왼쪽 이미지 자리를 먼저 생성합니다.
         with image_column:
-            st.image(
-                original_image,
-                use_container_width=True
-            )
+            image_placeholder = st.empty()
 
+        # 오른쪽 Background 옵션
         with option_column:
             (
                 selected_background,
@@ -805,7 +777,7 @@ def show_photo_editor_page():
             show_adjustment_options()
         )
 
-        # 현재 옵션으로 Preview 생성
+        # 현재 선택된 옵션으로 편집 결과를 생성합니다.
         preview_result = run_photo_edit(
             original_image=original_image,
             selected_background=selected_background,
@@ -825,38 +797,57 @@ def show_photo_editor_page():
                 "photo_editor_preview_result"
             ] = preview_result
 
-            st.markdown(
-                "#### Preview"
+            st.session_state.pop(
+                "photo_editor_error",
+                None
             )
-
-            st.image(
-                preview_image,
-                use_container_width=True
-            )
-
-            descriptions = preview_result.get(
-                "descriptions",
-                []
-            )
-
-            if descriptions:
-                with st.expander(
-                    "Applied changes"
-                ):
-                    for description in descriptions:
-                        st.write(
-                            f"• {description}"
-                        )
 
         else:
             preview_image = original_image
 
-            st.warning(
-                preview_result.get(
-                    "message",
-                    "Preview could not be generated."
-                )
+            error_message = preview_result.get(
+                "message",
+                "Preview could not be generated."
             )
+
+            st.session_state[
+                "photo_editor_error"
+            ] = error_message
+
+        # 왼쪽 영역에 현재 편집 결과를 표시합니다.
+        image_placeholder.image(
+            preview_image,
+            use_container_width=True
+        )
+
+        editor_error = st.session_state.get(
+            "photo_editor_error"
+        )
+
+        if editor_error:
+            st.warning(
+                editor_error
+            )
+
+        descriptions = preview_result.get(
+            "descriptions",
+            []
+        )
+
+        if (
+            preview_result.get(
+                "success",
+                False
+            )
+            and descriptions
+        ):
+            with st.expander(
+                "Applied changes"
+            ):
+                for description in descriptions:
+                    st.write(
+                        f"• {description}"
+                    )
 
         render_html(
             '<div class="photo-editor-button-space"></div>'
