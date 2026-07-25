@@ -554,3 +554,85 @@ def change_background(
         "description": description,
         "personal_color": personal_color_name
     }
+
+
+def _get_mask_and_arrays(image):
+    """공용: 인물 마스크 + 배열 준비"""
+    original_image = image.convert("RGB")
+    mask = create_person_mask(original_image)  # 이미 이 파일에 있는 함수 재사용
+    original_array = np.array(original_image, dtype=np.float32)
+    mask_3d = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
+    return original_image, original_array, mask_3d
+ 
+ 
+def blur_background(image, blur_radius=15):
+    """배경만 블러 처리하고 인물은 선명하게 유지"""
+    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
+ 
+    blurred = original_image.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+    blurred_array = np.array(blurred, dtype=np.float32)
+ 
+    result_array = original_array * mask_3d + blurred_array * (1 - mask_3d)
+    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
+    return Image.fromarray(result_array)
+ 
+ 
+def apply_solid_color_background(image, hex_color):
+    """배경을 지정한 단색으로 교체"""
+    hex_color = hex_color.lstrip("#")
+    rgb = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+ 
+    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
+    background_array = np.full(original_array.shape, rgb, dtype=np.float32)
+ 
+    result_array = original_array * mask_3d + background_array * (1 - mask_3d)
+    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
+    return Image.fromarray(result_array)
+ 
+ 
+def _generate_office_background(size):
+    """사진 파일 없이 코드로 만드는 간단한 오피스 느낌 배경"""
+    width, height = size
+    bg = Image.new("RGB", size, (223, 226, 231))
+    draw = ImageDraw.Draw(bg)
+    # 창문/파티션 느낌의 세로 라인
+    for x in range(0, width, max(40, width // 8)):
+        draw.line([(x, 0), (x, height)], fill=(200, 204, 210), width=2)
+    draw.rectangle([0, int(height * 0.75), width, height], fill=(210, 213, 218))
+    return bg.filter(ImageFilter.GaussianBlur(radius=8))
+ 
+ 
+def _generate_urban_background(size):
+    """사진 파일 없이 코드로 만드는 간단한 도시 느낌 배경"""
+    width, height = size
+    bg = Image.new("RGB", size, (176, 184, 196))
+    draw = ImageDraw.Draw(bg)
+    horizon = int(height * 0.62)
+    draw.rectangle([0, horizon, width, height], fill=(150, 156, 165))
+    # 건물 실루엣
+    import random
+    random.seed(42)
+    x = 0
+    while x < width:
+        w = random.randint(width // 10, width // 6)
+        h = random.randint(int(height * 0.25), int(height * 0.5))
+        draw.rectangle([x, horizon - h, x + w, horizon], fill=(130, 138, 150))
+        x += w + random.randint(5, 15)
+    return bg.filter(ImageFilter.GaussianBlur(radius=6))
+ 
+ 
+def apply_generated_background(image, background_type):
+    """Office / Urban 같은 생성 배경을 합성"""
+    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
+ 
+    if background_type == "Office":
+        bg = _generate_office_background(original_image.size)
+    elif background_type == "Urban":
+        bg = _generate_urban_background(original_image.size)
+    else:
+        return original_image
+ 
+    bg_array = np.array(bg, dtype=np.float32)
+    result_array = original_array * mask_3d + bg_array * (1 - mask_3d)
+    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
+    return Image.fromarray(result_array)
