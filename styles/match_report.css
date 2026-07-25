@@ -4,6 +4,70 @@
 
 
 /* ========================================
+   상단 진행 단계
+======================================== */
+
+.match-report-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    padding: 4px 0;
+}
+
+.match-report-progress-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 28px;
+    height: 28px;
+
+    border-radius: 50%;
+
+    background-color: #f1f0f5;
+    color: #8d8a99;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.match-report-progress-dot.completed {
+    background-color: #efecfb;
+    color: #6657df;
+}
+
+.match-report-progress-dot.active {
+    background: linear-gradient(
+        135deg,
+        #6650e8,
+        #7145ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 13px
+        rgba(103, 75, 239, 0.25);
+}
+
+.match-report-progress-line {
+    width: 20px;
+    height: 2px;
+
+    margin: 0 4px;
+
+    background-color: #e8e6ed;
+}
+
+.match-report-progress-line.completed {
+    background-color: #d8d1f4;
+}
+
+
+/* ========================================
    Back 버튼
 ======================================== */
 
@@ -33,13 +97,19 @@
     transform: none;
 }
 
+.st-key-match_report_back button:focus {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
 
 /* ========================================
    제목
 ======================================== */
 
 .match-report-header {
-    margin-top: 32px;
+    margin-top: 38px;
     margin-bottom: 36px;
 
     text-align: center;
@@ -357,10 +427,34 @@
 .st-key-match_report_continue_button button {
     min-height: 54px;
 
+    border: none;
     border-radius: 11px;
+
+    background: linear-gradient(
+        90deg,
+        #7047ed,
+        #6847f5
+    );
+
+    color: #ffffff;
 
     font-size: 16px;
     font-weight: 750;
+
+    box-shadow: 0 8px 20px
+        rgba(104, 71, 245, 0.22);
+}
+
+.st-key-match_report_continue_button button:hover {
+    border: none;
+
+    background: linear-gradient(
+        90deg,
+        #653ce4,
+        #5d38df
+    );
+
+    color: #ffffff;
 }
 
 
@@ -369,6 +463,24 @@
 ======================================== */
 
 @media (max-width: 700px) {
+    .match-report-progress-line {
+        width: 8px;
+
+        margin: 0 2px;
+    }
+
+    .match-report-progress-dot {
+        width: 25px;
+        height: 25px;
+
+        font-size: 11px;
+    }
+
+    .match-report-header {
+        margin-top: 28px;
+        margin-bottom: 30px;
+    }
+
     .match-report-title {
         font-size: 25px;
     }
@@ -382,10 +494,7 @@
         min-height: 260px;
     }
 
-    .match-alignment-card {
-        min-height: auto;
-    }
-
+    .match-alignment-card,
     .match-feedback-card {
         min-height: auto;
     }
@@ -393,5 +502,41 @@
     .match-color-swatch {
         width: 46px;
         height: 46px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .match-report-progress-line {
+        width: 4px;
+
+        margin: 0 1px;
+    }
+
+    .match-report-progress-dot {
+        width: 23px;
+        height: 23px;
+
+        font-size: 10px;
+    }
+
+    .match-report-title {
+        font-size: 22px;
+    }
+
+    .match-score-number {
+        font-size: 52px;
+    }
+
+    .match-score-card,
+    .match-alignment-card,
+    .match-feedback-card,
+    .match-color-card {
+        padding-right: 20px;
+        padding-left: 20px;
     }
 }

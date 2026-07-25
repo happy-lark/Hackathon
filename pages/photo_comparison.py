@@ -10,6 +10,10 @@ from PIL import Image
 from utils.navigation import go_to_page
 
 
+TOTAL_STEPS = 7
+CURRENT_STEP = 5
+
+
 PERSONA_ATTRIBUTES = [
     "Professional",
     "Confident",
@@ -82,7 +86,6 @@ def clamp_score(value):
     except (TypeError, ValueError):
         return None
 
-    # 분석값이 0~1 범위이면 퍼센트로 변환
     if 0 <= numeric_value <= 1:
         numeric_value *= 100
 
@@ -122,7 +125,10 @@ def normalize_persona_scores(raw_scores):
     PersonaLab의 네 가지 Persona 점수로 변환합니다.
     """
 
-    if not isinstance(raw_scores, dict):
+    if not isinstance(
+        raw_scores,
+        dict
+    ):
         return None
 
     normalized_lookup = {
@@ -195,7 +201,6 @@ def get_target_persona():
         if normalized_target:
             return normalized_target
 
-    # Target slider의 widget key에서 직접 가져오기
     widget_target = {}
 
     for attribute, widget_key in (
@@ -245,7 +250,10 @@ def get_individual_results():
             key
         )
 
-        if isinstance(results, list):
+        if isinstance(
+            results,
+            list
+        ):
             return results
 
     return []
@@ -285,7 +293,6 @@ def extract_photo_scores(photo_result):
         if normalized_scores:
             return normalized_scores
 
-    # 점수가 photo_result 최상단에 있는 경우
     return normalize_persona_scores(
         photo_result
     )
@@ -308,8 +315,11 @@ def calculate_match_score(
 
     if target_total <= 0:
         weights = {
-            attribute: 1 / len(
-                PERSONA_ATTRIBUTES
+            attribute: (
+                1
+                / len(
+                    PERSONA_ATTRIBUTES
+                )
             )
             for attribute in PERSONA_ATTRIBUTES
         }
@@ -317,7 +327,9 @@ def calculate_match_score(
     else:
         weights = {
             attribute: (
-                target_scores[attribute]
+                target_scores[
+                    attribute
+                ]
                 / target_total
             )
             for attribute in PERSONA_ATTRIBUTES
@@ -340,7 +352,10 @@ def calculate_match_score(
     return round(
         max(
             0,
-            min(match_score, 100)
+            min(
+                match_score,
+                100
+            )
         )
     )
 
@@ -368,15 +383,23 @@ def get_existing_feedback(photo_result):
             key
         )
 
-        if isinstance(feedback, list):
+        if isinstance(
+            feedback,
+            list
+        ):
             return [
                 str(item)
                 for item in feedback
                 if item
             ][:4]
 
-        if isinstance(feedback, str):
-            return [feedback]
+        if isinstance(
+            feedback,
+            str
+        ):
+            return [
+                feedback
+            ]
 
     return []
 
@@ -391,8 +414,12 @@ def create_alignment_feedback(
 
     differences = {
         attribute: abs(
-            photo_scores[attribute]
-            - target_scores[attribute]
+            photo_scores[
+                attribute
+            ]
+            - target_scores[
+                attribute
+            ]
         )
         for attribute in PERSONA_ATTRIBUTES
     }
@@ -400,23 +427,29 @@ def create_alignment_feedback(
     closest_attributes = sorted(
         PERSONA_ATTRIBUTES,
         key=lambda attribute: (
-            differences[attribute]
+            differences[
+                attribute
+            ]
         )
     )
 
     largest_gap_attribute = max(
         PERSONA_ATTRIBUTES,
         key=lambda attribute: (
-            differences[attribute]
+            differences[
+                attribute
+            ]
         )
     )
 
     feedback = []
 
-    for attribute in closest_attributes[:2]:
+    for attribute in closest_attributes[
+        :2
+    ]:
         feedback.append(
             f"{attribute} closely matches "
-            f"your target persona"
+            "your target persona"
         )
 
     largest_gap = differences[
@@ -440,13 +473,13 @@ def create_alignment_feedback(
     elif photo_value < target_value:
         feedback.append(
             f"{largest_gap_attribute} could "
-            f"be strengthened slightly"
+            "be strengthened slightly"
         )
 
     else:
         feedback.append(
             f"{largest_gap_attribute} appears "
-            f"stronger than your selected target"
+            "stronger than your selected target"
         )
 
     feedback.append(
@@ -462,12 +495,17 @@ def image_to_data_uri(image):
     Base64 이미지 URI로 변환합니다.
     """
 
-    if not isinstance(image, Image.Image):
+    if not isinstance(
+        image,
+        Image.Image
+    ):
         return ""
 
     buffer = BytesIO()
 
-    image.convert("RGB").save(
+    image.convert(
+        "RGB"
+    ).save(
         buffer,
         format="JPEG",
         quality=90
@@ -475,7 +513,9 @@ def image_to_data_uri(image):
 
     encoded_image = base64.b64encode(
         buffer.getvalue()
-    ).decode("utf-8")
+    ).decode(
+        "utf-8"
+    )
 
     return (
         "data:image/jpeg;base64,"
@@ -499,7 +539,10 @@ def build_photo_ranking():
         []
     )
 
-    target_scores = get_target_persona()
+    target_scores = (
+        get_target_persona()
+    )
+
     individual_results = (
         get_individual_results()
     )
@@ -569,7 +612,9 @@ def build_photo_ranking():
         if not (
             0
             <= image_index
-            < len(uploaded_images)
+            < len(
+                uploaded_images
+            )
         ):
             continue
 
@@ -610,7 +655,8 @@ def build_photo_ranking():
             {
                 "image_index": image_index,
                 "photo_number": (
-                    image_index + 1
+                    image_index
+                    + 1
                 ),
                 "filename": filename,
                 "scores": photo_scores,
@@ -630,7 +676,9 @@ def build_photo_ranking():
 
     ranking.sort(
         key=lambda item: (
-            item["match_score"]
+            item[
+                "match_score"
+            ]
         ),
         reverse=True
     )
@@ -639,7 +687,9 @@ def build_photo_ranking():
         ranking,
         start=1
     ):
-        item["rank"] = rank_number
+        item[
+            "rank"
+        ] = rank_number
 
     return {
         "success": True,
@@ -648,9 +698,58 @@ def build_photo_ranking():
     }
 
 
+def build_progress_html():
+    """
+    현재 단계에 맞춰 1~7단계 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span class="comparison-progress-dot {state_class}">
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span class="comparison-progress-line {line_class}">
+                </span>
+                """
+            )
+
+    return "".join(
+        progress_parts
+    )
+
+
 def show_progress_header():
     """
-    Back 버튼과 Step 5 진행 상태를 표시합니다.
+    Back 버튼과 1~7단계 진행 상태를 표시합니다.
+
+    현재 Photo Comparison 페이지는 Step 5입니다.
     """
 
     (
@@ -658,7 +757,7 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.15, 4.7, 1.15],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
@@ -667,21 +766,15 @@ def show_progress_header():
             "‹ Back",
             key="comparison_top_back"
         ):
-            go_to_page("ai_analysis")
+            go_to_page(
+                "ai_analysis"
+            )
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="comparison-progress">
-                <div class="comparison-progress-dot completed">1</div>
-                <div class="comparison-progress-line completed"></div>
-                <div class="comparison-progress-dot completed">2</div>
-                <div class="comparison-progress-line completed"></div>
-                <div class="comparison-progress-dot completed">3</div>
-                <div class="comparison-progress-line completed"></div>
-                <div class="comparison-progress-dot completed">4</div>
-                <div class="comparison-progress-line completed"></div>
-                <div class="comparison-progress-dot active">5</div>
+                {build_progress_html()}
             </div>
             """
         )
@@ -710,7 +803,9 @@ def show_best_photo_card(
 
     escaped_filename = html.escape(
         str(
-            best_photo["filename"]
+            best_photo[
+                "filename"
+            ]
         )
     )
 
@@ -718,7 +813,9 @@ def show_best_photo_card(
         f"""
         <div class="comparison-feedback-item">
             <span>✓</span>
-            <div>{html.escape(str(item))}</div>
+            <div>
+                {html.escape(str(item))}
+            </div>
         </div>
         """
         for item in best_photo[
@@ -789,7 +886,9 @@ def show_ranked_photo_row(
 
     escaped_filename = html.escape(
         str(
-            photo["filename"]
+            photo[
+                "filename"
+            ]
         )
     )
 
@@ -826,14 +925,17 @@ def show_ranked_photo_row(
 
 def save_ranking_to_session(ranking):
     """
-    Ranking 결과와 추천 사진 번호를 session_state에 저장합니다.
+    Ranking 결과와 추천 사진 번호를
+    session_state에 저장합니다.
     """
 
     st.session_state[
         "photo_ranking"
     ] = [
         {
-            "rank": item["rank"],
+            "rank": item[
+                "rank"
+            ],
             "image_index": item[
                 "image_index"
             ],
@@ -882,104 +984,116 @@ def show_photo_comparison_page():
     Step 5. Photo Comparison 페이지입니다.
     """
 
-    show_progress_header()
+    _, content_column, _ = st.columns(
+        [0.45, 5.1, 0.45]
+    )
 
-    render_html(
-        """
-        <div class="comparison-page-header">
-            <div class="comparison-page-title">
-                Step 5. Photo Comparison
+    with content_column:
+        show_progress_header()
+
+        render_html(
+            """
+            <div class="comparison-page-header">
+                <div class="comparison-page-title">
+                    Step 5. Photo Comparison
+                </div>
+
+                <div class="comparison-page-description">
+                    We found the best match for your target persona.
+                </div>
             </div>
-
-            <div class="comparison-page-description">
-                We found the best match for your target persona.
-            </div>
-        </div>
-        """
-    )
-
-    ranking_result = (
-        build_photo_ranking()
-    )
-
-    if not ranking_result[
-        "success"
-    ]:
-        st.error(
-            ranking_result[
-                "message"
-            ]
+            """
         )
 
-        back_column, retry_column = (
-            st.columns(2)
+        ranking_result = (
+            build_photo_ranking()
         )
 
-        with back_column:
-            if st.button(
-                "Back to Upload",
-                use_container_width=True,
-                key="comparison_error_back"
-            ):
-                go_to_page("upload")
+        if not ranking_result[
+            "success"
+        ]:
+            st.error(
+                ranking_result[
+                    "message"
+                ]
+            )
 
-        with retry_column:
-            if st.button(
-                "Run Analysis Again",
-                type="primary",
-                use_container_width=True,
-                key="comparison_error_retry"
-            ):
-                st.session_state.pop(
-                    "analysis_result",
-                    None
-                )
+            (
+                back_column,
+                retry_column
+            ) = st.columns(
+                2
+            )
 
-                st.session_state.pop(
-                    "analysis_status",
-                    None
-                )
+            with back_column:
+                if st.button(
+                    "Back to Upload",
+                    use_container_width=True,
+                    key="comparison_error_back"
+                ):
+                    go_to_page(
+                        "upload"
+                    )
 
-                go_to_page(
-                    "ai_analysis"
-                )
+            with retry_column:
+                if st.button(
+                    "Run Analysis Again",
+                    type="primary",
+                    use_container_width=True,
+                    key="comparison_error_retry"
+                ):
+                    st.session_state.pop(
+                        "analysis_result",
+                        None
+                    )
 
-        return
+                    st.session_state.pop(
+                        "analysis_status",
+                        None
+                    )
 
-    ranking = ranking_result[
-        "ranking"
-    ]
+                    go_to_page(
+                        "ai_analysis"
+                    )
 
-    uploaded_images = (
-        st.session_state.get(
-            "uploaded_images",
-            []
+            return
+
+        ranking = ranking_result[
+            "ranking"
+        ]
+
+        uploaded_images = (
+            st.session_state.get(
+                "uploaded_images",
+                []
+            )
         )
-    )
 
-    save_ranking_to_session(
-        ranking
-    )
+        save_ranking_to_session(
+            ranking
+        )
 
-    show_best_photo_card(
-        best_photo=ranking[0],
-        uploaded_images=uploaded_images
-    )
-
-    for photo in ranking[1:]:
-        show_ranked_photo_row(
-            photo=photo,
+        show_best_photo_card(
+            best_photo=ranking[0],
             uploaded_images=uploaded_images
         )
 
-    render_html(
-        '<div class="comparison-button-space"></div>'
-    )
+        for photo in ranking[1:]:
+            show_ranked_photo_row(
+                photo=photo,
+                uploaded_images=uploaded_images
+            )
 
-    if st.button(
-        "Continue to Report",
-        type="primary",
-        use_container_width=True,
-        key="comparison_continue_button"
-    ):
-        go_to_page("match_report")
+        render_html(
+            '<div class="comparison-button-space"></div>'
+        )
+
+        if st.button(
+            "Continue to Report",
+            type="primary",
+            use_container_width=True,
+            key="comparison_continue_button"
+        ):
+            go_to_page(
+                "match_report"
+            )
