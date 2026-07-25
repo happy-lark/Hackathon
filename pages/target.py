@@ -53,7 +53,9 @@ def render_html(html_content):
     """
 
     st.markdown(
-        clean_html(html_content),
+        clean_html(
+            html_content
+        ),
         unsafe_allow_html=True
     )
 
@@ -75,14 +77,19 @@ def clamp_slider_value(value):
     """
 
     try:
-        numeric_value = int(value)
+        numeric_value = int(
+            value
+        )
 
     except (TypeError, ValueError):
         numeric_value = 0
 
     return max(
         0,
-        min(100, numeric_value)
+        min(
+            100,
+            numeric_value
+        )
     )
 
 
@@ -91,64 +98,83 @@ def normalize_integer_values(
     total=100
 ):
     """
-    여러 값을 기존 비율에 따라 정수로 재분배하고
-    합계를 정확히 total로 맞춥니다.
+    사용자가 입력한 각 Persona의 상대적인 비율을 유지하면서
+    Summary용 값의 합계를 정확히 100으로 맞춥니다.
 
-    Largest Remainder 방식으로 반올림 오차를 처리합니다.
+    슬라이더 원본 값은 변경하지 않습니다.
+
+    Largest Remainder 방식으로
+    정수 반올림 오차를 처리합니다.
     """
 
     cleaned_values = {
-        name: max(
-            0,
+        persona_name: max(
+            0.0,
             float(
-                values.get(name, 0)
+                values.get(
+                    persona_name,
+                    0
+                )
             )
         )
-        for name in PERSONA_NAMES
+        for persona_name in PERSONA_NAMES
     }
 
     current_total = sum(
         cleaned_values.values()
     )
 
+    # 모두 0인 경우에는 균등한 기본 비율을 사용합니다.
     if current_total <= 0:
         base_value = (
             total
-            // len(PERSONA_NAMES)
+            // len(
+                PERSONA_NAMES
+            )
         )
 
         remainder = (
             total
-            - base_value
-            * len(PERSONA_NAMES)
+            - (
+                base_value
+                * len(
+                    PERSONA_NAMES
+                )
+            )
         )
 
-        result = {
-            name: base_value
-            for name in PERSONA_NAMES
+        normalized_values = {
+            persona_name: base_value
+            for persona_name in PERSONA_NAMES
         }
 
-        for name in PERSONA_NAMES[
+        for persona_name in PERSONA_NAMES[
             :remainder
         ]:
-            result[name] += 1
+            normalized_values[
+                persona_name
+            ] += 1
 
-        return result
+        return normalized_values
 
     exact_values = {
-        name: (
-            cleaned_values[name]
+        persona_name: (
+            cleaned_values[
+                persona_name
+            ]
             / current_total
             * total
         )
-        for name in PERSONA_NAMES
+        for persona_name in PERSONA_NAMES
     }
 
     integer_values = {
-        name: int(
-            exact_values[name]
+        persona_name: int(
+            exact_values[
+                persona_name
+            ]
         )
-        for name in PERSONA_NAMES
+        for persona_name in PERSONA_NAMES
     }
 
     remaining_points = (
@@ -160,24 +186,33 @@ def normalize_integer_values(
 
     remainder_order = sorted(
         PERSONA_NAMES,
-        key=lambda name: (
-            exact_values[name]
-            - integer_values[name]
+        key=lambda persona_name: (
+            exact_values[
+                persona_name
+            ]
+            - integer_values[
+                persona_name
+            ]
         ),
         reverse=True
     )
 
-    for name in remainder_order[
+    for persona_name in remainder_order[
         :remaining_points
     ]:
-        integer_values[name] += 1
+        integer_values[
+            persona_name
+        ] += 1
 
     return integer_values
 
 
 def initialize_slider_values():
     """
-    저장된 값을 불러오고 합계를 정확히 100으로 맞춥니다.
+    저장된 슬라이더 원본 값을 불러옵니다.
+
+    이 함수에서는 합계를 100으로 조정하지 않습니다.
+    각각의 슬라이더는 서로 독립적으로 유지됩니다.
     """
 
     saved_values = st.session_state.get(
@@ -191,36 +226,30 @@ def initialize_slider_values():
     ):
         saved_values = {}
 
+    # 이전 프로젝트 키와의 호환성
     if "Creative" not in saved_values:
         if "Warm" in saved_values:
-            saved_values["Creative"] = (
-                saved_values["Warm"]
-            )
+            saved_values[
+                "Creative"
+            ] = saved_values[
+                "Warm"
+            ]
 
         elif "Trustworthy" in saved_values:
-            saved_values["Creative"] = (
-                saved_values["Trustworthy"]
-            )
-
-    current_values = {}
+            saved_values[
+                "Creative"
+            ] = saved_values[
+                "Trustworthy"
+            ]
 
     for persona_name in PERSONA_NAMES:
         widget_key = get_slider_widget_key(
             persona_name
         )
 
-        if widget_key in st.session_state:
-            current_values[
-                persona_name
-            ] = clamp_slider_value(
-                st.session_state[
-                    widget_key
-                ]
-            )
-
-        else:
-            current_values[
-                persona_name
+        if widget_key not in st.session_state:
+            st.session_state[
+                widget_key
             ] = clamp_slider_value(
                 saved_values.get(
                     persona_name,
@@ -229,144 +258,6 @@ def initialize_slider_values():
                     ]
                 )
             )
-
-    normalized_values = (
-        normalize_integer_values(
-            current_values,
-            total=100
-        )
-    )
-
-    for persona_name in PERSONA_NAMES:
-        widget_key = get_slider_widget_key(
-            persona_name
-        )
-
-        st.session_state[
-            widget_key
-        ] = normalized_values[
-            persona_name
-        ]
-
-
-def rebalance_slider_values(
-    changed_persona
-):
-    """
-    한 슬라이더가 변경되면 나머지 세 슬라이더를
-    자동 조정해 전체 합계를 100으로 유지합니다.
-    """
-
-    changed_key = get_slider_widget_key(
-        changed_persona
-    )
-
-    changed_value = clamp_slider_value(
-        st.session_state.get(
-            changed_key,
-            0
-        )
-    )
-
-    st.session_state[
-        changed_key
-    ] = changed_value
-
-    remaining_total = (
-        100
-        - changed_value
-    )
-
-    other_personas = [
-        name
-        for name in PERSONA_NAMES
-        if name != changed_persona
-    ]
-
-    other_values = {
-        name: clamp_slider_value(
-            st.session_state.get(
-                get_slider_widget_key(name),
-                0
-            )
-        )
-        for name in other_personas
-    }
-
-    other_sum = sum(
-        other_values.values()
-    )
-
-    if other_sum <= 0:
-        base_value = (
-            remaining_total
-            // len(other_personas)
-        )
-
-        remainder = (
-            remaining_total
-            - base_value
-            * len(other_personas)
-        )
-
-        redistributed_values = {
-            name: base_value
-            for name in other_personas
-        }
-
-        for name in other_personas[
-            :remainder
-        ]:
-            redistributed_values[name] += 1
-
-    else:
-        exact_values = {
-            name: (
-                other_values[name]
-                / other_sum
-                * remaining_total
-            )
-            for name in other_personas
-        }
-
-        redistributed_values = {
-            name: int(
-                exact_values[name]
-            )
-            for name in other_personas
-        }
-
-        missing_points = (
-            remaining_total
-            - sum(
-                redistributed_values.values()
-            )
-        )
-
-        remainder_order = sorted(
-            other_personas,
-            key=lambda name: (
-                exact_values[name]
-                - redistributed_values[name]
-            ),
-            reverse=True
-        )
-
-        for name in remainder_order[
-            :missing_points
-        ]:
-            redistributed_values[name] += 1
-
-    for persona_name in other_personas:
-        widget_key = get_slider_widget_key(
-            persona_name
-        )
-
-        st.session_state[
-            widget_key
-        ] = redistributed_values[
-            persona_name
-        ]
 
 
 def get_top_personas(
@@ -380,25 +271,31 @@ def get_top_personas(
     active_personas = [
         (
             persona_name,
-            persona_values[
-                persona_name
-            ]
+            persona_values.get(
+                persona_name,
+                0
+            )
         )
         for persona_name in PERSONA_NAMES
-        if persona_values[
-            persona_name
-        ] > 0
+        if persona_values.get(
+            persona_name,
+            0
+        ) > 0
     ]
 
     active_personas.sort(
-        key=lambda item: item[1],
+        key=lambda item: (
+            item[1]
+        ),
         reverse=True
     )
 
     return [
         persona_name
         for persona_name, _
-        in active_personas[:limit]
+        in active_personas[
+            :limit
+        ]
     ]
 
 
@@ -412,10 +309,14 @@ def format_persona_names(
     if not persona_names:
         return ""
 
-    if len(persona_names) == 1:
+    if len(
+        persona_names
+    ) == 1:
         return persona_names[0]
 
-    if len(persona_names) == 2:
+    if len(
+        persona_names
+    ) == 2:
         return (
             f"{persona_names[0]} and "
             f"{persona_names[1]}"
@@ -429,19 +330,20 @@ def format_persona_names(
 
 
 def build_donut_gradient(
-    persona_values
+    normalized_values
 ):
     """
-    합계가 100인 Persona 값으로
+    합계가 정확히 100인 Summary 값을 이용해
     CSS conic-gradient를 생성합니다.
     """
 
     active_personas = [
         persona_name
         for persona_name in PERSONA_NAMES
-        if persona_values[
-            persona_name
-        ] > 0
+        if normalized_values.get(
+            persona_name,
+            0
+        ) > 0
     ]
 
     if not active_personas:
@@ -457,15 +359,18 @@ def build_donut_gradient(
     for index, persona_name in enumerate(
         active_personas
     ):
-        if index == len(
-            active_personas
-        ) - 1:
+        if index == (
+            len(
+                active_personas
+            )
+            - 1
+        ):
             end_point = 100.0
 
         else:
             end_point = (
                 start_point
-                + persona_values[
+                + normalized_values[
                     persona_name
                 ]
             )
@@ -492,11 +397,12 @@ def build_donut_gradient(
 
 
 def build_persona_legend(
-    persona_values
+    normalized_values
 ):
     """
-    Persona 색상, 이름, 퍼센트를 표시하는
-    범례 HTML을 생성합니다.
+    Summary에 정규화된 Persona 비율을 표시합니다.
+
+    이 값들의 합계는 항상 100입니다.
     """
 
     legend_items = []
@@ -506,9 +412,10 @@ def build_persona_legend(
             persona_name
         ]
 
-        score = persona_values[
-            persona_name
-        ]
+        score = normalized_values.get(
+            persona_name,
+            0
+        )
 
         opacity = (
             "1"
@@ -653,7 +560,10 @@ def show_page_header():
 
 def show_persona_sliders():
     """
-    합계가 항상 100인 Persona 슬라이더를 표시합니다.
+    서로 독립적인 Persona 슬라이더를 표시합니다.
+
+    각 슬라이더는 사용자가 자유롭게 0~100 사이에서 설정하며,
+    다른 슬라이더의 값은 자동으로 변경되지 않습니다.
     """
 
     slider_values = {}
@@ -702,6 +612,7 @@ def show_persona_sliders():
             """
         )
 
+        # on_change와 rebalance 로직을 제거했습니다.
         slider_values[
             persona_name
         ] = st.slider(
@@ -710,11 +621,7 @@ def show_persona_sliders():
             max_value=100,
             step=1,
             key=widget_key,
-            label_visibility="collapsed",
-            on_change=rebalance_slider_values,
-            args=(
-                persona_name,
-            )
+            label_visibility="collapsed"
         )
 
         render_html(
@@ -725,21 +632,37 @@ def show_persona_sliders():
 
 
 def show_persona_summary(
-    persona_values
+    raw_values,
+    normalized_values
 ):
     """
-    Persona 요약, 범례, 도넛 그래프를 표시합니다.
+    사용자의 원본 슬라이더 비율을 100%로 정규화하여
+    Persona Summary, 범례, 도넛 그래프를 표시합니다.
     """
 
+    raw_total = sum(
+        raw_values.values()
+    )
+
     top_personas = get_top_personas(
-        persona_values
+        normalized_values
     )
 
     persona_text = format_persona_names(
         top_personas
     )
 
-    if top_personas:
+    if raw_total <= 0:
+        summary_text = (
+            "No specific persona preference "
+            "has been selected."
+        )
+
+        persona_summary_html = (
+            "No specific preference selected."
+        )
+
+    elif top_personas:
         summary_text = (
             "You want to be seen as: "
             f"{persona_text}."
@@ -764,11 +687,11 @@ def show_persona_summary(
     ] = summary_text
 
     donut_gradient = build_donut_gradient(
-        persona_values
+        normalized_values
     )
 
     legend_html = build_persona_legend(
-        persona_values
+        normalized_values
     )
 
     render_html(
@@ -792,7 +715,7 @@ def show_persona_summary(
                 </div>
 
                 <div class="target-summary-total">
-                    Total: 100%
+                    Normalized total: 100%
                 </div>
             </div>
 
@@ -859,7 +782,8 @@ def show_target_page():
 
         show_persona_sliders()
 
-        persona_values = {
+        # 사용자가 실제로 입력한 원본 슬라이더 값
+        raw_persona_values = {
             persona_name: clamp_slider_value(
                 st.session_state.get(
                     get_slider_widget_key(
@@ -871,39 +795,39 @@ def show_target_page():
             for persona_name in PERSONA_NAMES
         }
 
-        if sum(
-            persona_values.values()
-        ) != 100:
-            persona_values = (
-                normalize_integer_values(
-                    persona_values,
-                    total=100
-                )
+        # Summary와 이후 분석에 사용할 100% 정규화 값
+        normalized_persona_values = (
+            normalize_integer_values(
+                raw_persona_values,
+                total=100
             )
+        )
 
-            for persona_name in PERSONA_NAMES:
-                st.session_state[
-                    get_slider_widget_key(
-                        persona_name
-                    )
-                ] = persona_values[
-                    persona_name
-                ]
-
+        # 사용자가 직접 입력한 원본 값
         st.session_state[
             "target_slider_values"
-        ] = persona_values.copy()
+        ] = raw_persona_values.copy()
 
         st.session_state[
+            "target_persona_raw"
+        ] = raw_persona_values.copy()
+
+        # 분석 및 Match Score 계산에는 정규화된 값 사용
+        st.session_state[
             "target_persona"
-        ] = persona_values.copy()
+        ] = normalized_persona_values.copy()
 
         st.session_state[
             "target_persona_distribution"
-        ] = persona_values.copy()
+        ] = normalized_persona_values.copy()
+
+        st.session_state[
+            "target_persona_normalized"
+        ] = normalized_persona_values.copy()
 
         show_persona_summary(
-            persona_values
+            raw_values=raw_persona_values,
+            normalized_values=normalized_persona_values
         )
 
         render_html(

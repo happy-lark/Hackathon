@@ -4,6 +4,17 @@
 
 
 /* ========================================
+   분석 중 이전 페이지 잔상 제거
+======================================== */
+
+[data-testid="stAppViewContainer"]
+[data-stale="true"],
+[data-testid="stMain"]
+[data-stale="true"],
+.element-container[data-stale="true"] {
+    display: none !important;
+}
+/* ========================================
    상단 진행 단계
 ======================================== */
 
@@ -200,9 +211,6 @@
     transform: rotate(90deg);
 }
 
-
-/* 새 로봇 이미지 */
-
 .analysis-mascot-image {
     display: block;
 
@@ -304,6 +312,106 @@
 .analysis-step-item.pending
 .analysis-step-icon {
     background-color: #ffffff;
+}
+
+
+/* ========================================
+   Tips for Better Results
+======================================== */
+
+.analysis-tips-card {
+    box-sizing: border-box;
+
+    width: calc(100% - 32px);
+    max-width: 560px;
+
+    margin: 34px auto 0 auto;
+    padding: 22px 28px;
+
+    border: 1px solid rgba(
+        105,
+        85,
+        215,
+        0.10
+    );
+
+    border-radius: 16px;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #faf9ff
+    );
+
+    box-shadow: 0 8px 24px
+        rgba(70, 55, 140, 0.05);
+}
+
+.analysis-tips-title {
+    margin-bottom: 16px;
+
+    color: #302d47;
+
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.analysis-tips-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 11px;
+
+    width: 100%;
+    max-width: 360px;
+
+    margin: 0 auto;
+}
+
+.analysis-tip-item {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 11px;
+
+    width: 100%;
+    min-height: 28px;
+
+    color: #656276;
+
+    font-size: 13px;
+    font-weight: 550;
+    line-height: 1.45;
+}
+
+.analysis-tip-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 22px;
+    height: 22px;
+
+    border-radius: 50%;
+
+    background-color: #eefaf4;
+    color: #28a66f;
+
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.analysis-tip-text {
+    display: inline-block;
+
+    color: #5f5c70;
+
+    text-align: left;
 }
 
 
@@ -432,73 +540,6 @@
 
 
 /* ========================================
-   개인정보 안내 카드
-======================================== */
-
-.analysis-privacy-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    width: 100%;
-    max-width: 620px;
-
-    margin: 38px auto 0 auto;
-    padding: 20px 23px;
-
-    border: 1px solid rgba(
-        105,
-        85,
-        215,
-        0.08
-    );
-
-    border-radius: 15px;
-
-    background: linear-gradient(
-        145deg,
-        #faf9ff,
-        #f3f0ff
-    );
-
-    color: #4c4960;
-}
-
-.analysis-privacy-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    flex-shrink: 0;
-
-    width: 39px;
-    height: 39px;
-
-    border-radius: 12px;
-
-    background-color: #ffffff;
-    color: #6847f5;
-
-    font-size: 20px;
-}
-
-.analysis-privacy-title {
-    margin-bottom: 3px;
-
-    color: #343148;
-
-    font-size: 14px;
-    font-weight: 750;
-}
-
-.analysis-privacy-description {
-    color: #777487;
-
-    font-size: 13px;
-}
-
-
-/* ========================================
    Animation
 ======================================== */
 
@@ -563,8 +604,19 @@
         max-width: 100%;
     }
 
-    .analysis-privacy-card {
-        padding: 18px;
+    .analysis-tips-card {
+        width: 100%;
+
+        margin-top: 28px;
+        padding: 20px 18px;
+    }
+
+    .analysis-tips-list {
+        max-width: 330px;
+    }
+
+    .analysis-tip-item {
+        font-size: 12px;
     }
 
     .analysis-finished-card {
@@ -619,13 +671,33 @@
         height: 126px;
     }
 
+    .analysis-tips-card {
+        padding: 18px 15px;
+    }
+
+    .analysis-tips-title {
+        font-size: 14px;
+    }
+
+    .analysis-tips-list {
+        max-width: 280px;
+    }
+
+    .analysis-tip-item {
+        gap: 9px;
+
+        font-size: 11px;
+    }
+
+    .analysis-tip-icon {
+        width: 20px;
+        height: 20px;
+
+        font-size: 12px;
+    }
+
     .analysis-finished-card {
         padding: 20px 15px;
     }
-
-    .analysis-privacy-card {
-        gap: 12px;
-
-        padding: 16px;
-    }
+    
 }
