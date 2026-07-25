@@ -538,3 +538,24 @@
 
     font-weight: 750;
 }
+.target-summary-total {
+    margin-top: 16px;
+
+    color: #777487;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.target-donut-hole {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.target-donut-hole span {
+    color: #4f4c61;
+
+    font-size: 14px;
+    font-weight: 800;
+}

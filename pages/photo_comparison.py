@@ -982,4 +982,4 @@ def show_photo_comparison_page():
         use_container_width=True,
         key="comparison_continue_button"
     ):
-        go_to_page("result")
+        go_to_page("match_report")

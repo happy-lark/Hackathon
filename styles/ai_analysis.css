@@ -283,6 +283,121 @@
     background-color: #ffffff;
 }
 
+/* ========================================
+   분석 완료 안내
+======================================== */
+
+.analysis-finished-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    width: calc(100% - 32px);
+    max-width: 560px;
+
+    margin: 38px auto 0 auto;
+    padding: 25px 30px;
+
+    border: 1px solid rgba(
+        40,
+        166,
+        111,
+        0.15
+    );
+
+    border-radius: 16px;
+
+    background: linear-gradient(
+        145deg,
+        #f4fcf8,
+        #ffffff
+    );
+
+    box-shadow: 0 8px 24px
+        rgba(40, 166, 111, 0.06);
+
+    text-align: center;
+}
+
+.analysis-finished-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 44px;
+    height: 44px;
+
+    margin-bottom: 13px;
+
+    border-radius: 50%;
+
+    background-color: #e8f8ef;
+    color: #28a66f;
+
+    font-size: 22px;
+    font-weight: 850;
+}
+
+.analysis-finished-content {
+    width: 100%;
+
+    text-align: center;
+}
+
+.analysis-finished-title {
+    margin-bottom: 7px;
+
+    color: #292742;
+
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.analysis-finished-description {
+    max-width: 440px;
+
+    margin: 0 auto;
+
+    color: #68667a;
+
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+
+/* ========================================
+   분석 완료 버튼
+======================================== */
+
+.analysis-finished-button-space {
+    height: 20px;
+}
+
+.st-key-analysis_continue_button {
+    width: calc(100% - 32px);
+    max-width: 560px;
+
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.st-key-analysis_continue_button button {
+    min-height: 52px;
+
+    border-radius: 11px;
+
+    font-size: 16px;
+    font-weight: 750;
+}
+
+
+/* 완료된 진행률 문구 */
+
+.analysis-progress-text.finished {
+    color: #28a66f;
+}
 
 /* ========================================
    개인정보 안내 카드
@@ -420,4 +535,23 @@
     .analysis-privacy-card {
         padding: 18px;
     }
+        .analysis-finished-card {
+        width: 100%;
+
+        margin-top: 30px;
+        padding: 22px 18px;
+    }
+
+    .analysis-finished-title {
+        font-size: 17px;
+    }
+
+    .analysis-finished-description {
+        font-size: 13px;
+    }
+
+    .st-key-analysis_continue_button {
+        width: 100%;
+    }
 }
+
