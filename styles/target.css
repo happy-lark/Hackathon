@@ -163,6 +163,31 @@
 
 
 /* ========================================
+   슬라이더 Persona 색상 표시
+======================================== */
+
+.target-slider-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.target-slider-color {
+    display: inline-block;
+
+    flex-shrink: 0;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 3px
+        rgba(100, 90, 180, 0.07);
+}
+
+
+/* ========================================
    슬라이더 스타일
 ======================================== */
 
@@ -219,16 +244,19 @@
     font-size: 12px;
 }
 
-
 /* ========================================
    Persona Summary 카드
 ======================================== */
 
 .target-summary-card {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        145px;
     align-items: center;
     gap: 28px;
+
+    width: 100%;
 
     margin-top: 24px;
     padding: 28px 32px;
@@ -253,35 +281,108 @@
 }
 
 .target-summary-content {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+    width: 100%;
 }
 
 .target-summary-title {
-    margin-bottom: 25px;
+    margin: 0 0 22px 0;
 
     color: #282641;
 
     font-size: 18px;
     font-weight: 800;
+    line-height: 1.4;
 }
 
 .target-summary-label {
-    margin-bottom: 8px;
+    margin: 0 0 7px 0;
 
     color: #55536a;
 
     font-size: 14px;
     font-weight: 650;
+    line-height: 1.5;
 }
 
 .target-summary-personas {
-    max-width: 360px;
+    width: 100%;
+    max-width: none;
+
+    margin: 0;
 
     color: #24213f;
 
     font-size: 17px;
     font-weight: 780;
-    line-height: 1.65;
+    line-height: 1.55;
+}
+
+
+/* ========================================
+   Persona 색상 범례
+======================================== */
+
+.target-summary-legend {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 10px 24px;
+
+    width: 100%;
+
+    margin-top: 22px;
+}
+
+.target-legend-item {
+    display: grid;
+    grid-template-columns:
+        12px
+        minmax(0, 1fr)
+        auto;
+    align-items: center;
+    gap: 8px;
+
+    min-width: 0;
+
+    color: #5f5c70;
+
+    font-size: 12px;
+}
+
+.target-legend-color {
+    display: inline-block;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+}
+
+.target-legend-name {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.target-legend-value {
+    color: #302d47;
+
+    font-weight: 750;
+}
+
+.target-summary-total {
+    margin-top: 16px;
+
+    color: #777487;
+
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
 }
 
 
@@ -294,15 +395,16 @@
     justify-content: center;
     align-items: center;
 
-    flex-shrink: 0;
-
     width: 145px;
+    min-width: 145px;
 }
 
 .target-donut {
     display: flex;
     justify-content: center;
     align-items: center;
+
+    flex-shrink: 0;
 
     width: 120px;
     height: 120px;
@@ -316,6 +418,12 @@
 }
 
 .target-donut-hole {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
     width: 78px;
     height: 78px;
 
@@ -327,6 +435,116 @@
         rgba(100, 90, 180, 0.05);
 }
 
+.target-donut-hole span {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    color: #4f4c61;
+
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+
+    transform: rotate(90deg);
+}
+
+
+/* ========================================
+   모바일 화면의 Summary 카드
+======================================== */
+
+@media (max-width: 700px) {
+    .target-summary-card {
+        grid-template-columns:
+            minmax(0, 1fr)
+            105px;
+        gap: 16px;
+
+        padding: 23px 21px;
+    }
+
+    .target-summary-title {
+        margin-bottom: 18px;
+
+        font-size: 17px;
+    }
+
+    .target-summary-personas {
+        font-size: 15px;
+    }
+
+    .target-summary-legend {
+        gap: 9px 13px;
+
+        margin-top: 18px;
+    }
+
+    .target-legend-item {
+        gap: 6px;
+
+        font-size: 11px;
+    }
+
+    .target-donut-wrapper {
+        width: 105px;
+        min-width: 105px;
+    }
+
+    .target-donut {
+        width: 95px;
+        height: 95px;
+    }
+
+    .target-donut-hole {
+        width: 61px;
+        height: 61px;
+    }
+
+    .target-donut-hole span {
+        font-size: 12px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면의 Summary 카드
+======================================== */
+
+@media (max-width: 480px) {
+    .target-summary-card {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .target-summary-content {
+        width: 100%;
+    }
+
+    .target-summary-legend {
+        width: 100%;
+    }
+
+    .target-donut-wrapper {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .target-donut {
+        width: 105px;
+        height: 105px;
+    }
+
+    .target-donut-hole {
+        width: 68px;
+        height: 68px;
+    }
+
+    .target-donut-hole span {
+        font-size: 13px;
+    }
+}
 
 /* ========================================
    Continue 버튼
@@ -405,6 +623,16 @@
         font-size: 15px;
     }
 
+    .target-summary-legend {
+        gap: 9px 13px;
+    }
+
+    .target-legend-item {
+        gap: 6px;
+
+        font-size: 11px;
+    }
+
     .target-donut-wrapper {
         width: 105px;
     }
@@ -417,6 +645,10 @@
     .target-donut-hole {
         width: 61px;
         height: 61px;
+    }
+
+    .target-donut-hole span {
+        font-size: 12px;
     }
 
     .target-continue-space {
@@ -448,6 +680,14 @@
         align-items: flex-start;
     }
 
+    .target-summary-content {
+        width: 100%;
+    }
+
+    .target-summary-legend {
+        width: 100%;
+    }
+
     .target-donut-wrapper {
         width: 100%;
     }
@@ -461,101 +701,8 @@
         width: 68px;
         height: 68px;
     }
-}
 
-/* ========================================
-   슬라이더 Persona 색상 표시
-======================================== */
-
-.target-slider-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.target-slider-color {
-    display: inline-block;
-
-    flex-shrink: 0;
-
-    width: 11px;
-    height: 11px;
-
-    border-radius: 50%;
-
-    box-shadow: 0 0 0 3px
-        rgba(100, 90, 180, 0.07);
-}
-
-
-/* ========================================
-   Persona 색상 범례
-======================================== */
-
-.target-summary-legend {
-    display: grid;
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-    gap: 10px 20px;
-
-    margin-top: 22px;
-}
-
-.target-legend-item {
-    display: grid;
-    grid-template-columns:
-        12px
-        minmax(0, 1fr)
-        auto;
-    align-items: center;
-    gap: 8px;
-
-    min-width: 0;
-
-    color: #5f5c70;
-
-    font-size: 12px;
-}
-
-.target-legend-color {
-    display: inline-block;
-
-    width: 11px;
-    height: 11px;
-
-    border-radius: 50%;
-}
-
-.target-legend-name {
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.target-legend-value {
-    color: #302d47;
-
-    font-weight: 750;
-}
-.target-summary-total {
-    margin-top: 16px;
-
-    color: #777487;
-
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.target-donut-hole {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.target-donut-hole span {
-    color: #4f4c61;
-
-    font-size: 14px;
-    font-weight: 800;
+    .target-donut-hole span {
+        font-size: 13px;
+    }
 }

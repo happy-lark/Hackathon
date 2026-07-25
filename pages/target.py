@@ -691,10 +691,13 @@ def show_persona_sliders():
                             background-color: {persona_color};
                         "
                     ></span>
+
                     {persona_name}
                 </span>
 
-                <strong>{current_value}%</strong>
+                <strong>
+                    {current_value}%
+                </strong>
             </div>
             """
         )
@@ -709,7 +712,9 @@ def show_persona_sliders():
             key=widget_key,
             label_visibility="collapsed",
             on_change=rebalance_slider_values,
-            args=(persona_name,)
+            args=(
+                persona_name,
+            )
         )
 
         render_html(
@@ -797,7 +802,9 @@ def show_persona_summary(
                     style="background: {donut_gradient};"
                 >
                     <div class="target-donut-hole">
-                        <span>100%</span>
+                        <span>
+                            100%
+                        </span>
                     </div>
                 </div>
             </div>
