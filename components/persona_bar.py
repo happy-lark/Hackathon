@@ -10,7 +10,7 @@ import streamlit as st
 
 # 각 축의 색상 (원하는 색으로 자유롭게 바꿔도 됩니다)
 AXIS_COLORS = {
-    "Warm": "#e07a5f",
+    "Creative": "#e07a5f",
     "Confident": "#f2cc8f",
     "Professional": "#81b29a",
     "Approachable": "#3d5a80",
@@ -69,5 +69,5 @@ def render_all_persona_bars(target_persona: dict, detected_persona: dict):
     4개 축을 한번에 렌더링합니다.
     사용 예: render_all_persona_bars(target_persona, detected_persona)
     """
-    for axis in ["Warm", "Confident", "Professional", "Approachable"]:
+    for axis in ["Professional", "Confident", "Approachable", "Creative"]:
         render_persona_bar(axis, target_persona[axis], detected_persona[axis])

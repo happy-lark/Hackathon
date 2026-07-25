@@ -1,222 +1,96 @@
 from PIL import Image, ImageEnhance, ImageFilter
 
+import streamlit as st
 
-PURPOSE_SETTINGS = {
-    "Resume": {
-        "brightness": 1.06,
-        "contrast": 1.08,
-        "color": 0.96,
-        "sharpness": 1.10
-    },
-    "LinkedIn": {
-        "brightness": 1.05,
-        "contrast": 1.07,
-        "color": 1.04,
-        "sharpness": 1.10
-    },
-    "Corporate Headshot": {
-        "brightness": 1.04,
-        "contrast": 1.10,
-        "color": 0.98,
-        "sharpness": 1.13
-    }
+from utils.navigation import go_to_page
+from analysis.image_editor import process_images
+
+
+# =========================================
+# Step 9. Photo Editor 화면 (신규 추가)
+# =========================================
+
+BACKGROUND_MAP = {
+    "Original": None,
+    "Nature": "자연환경",
 }
 
 
-PERSONAL_COLOR_SETTINGS = {
-    "Spring Warm": {
-        "red": 1.025,
-        "green": 1.010,
-        "blue": 0.980,
-        "color": 1.04
-    },
-    "Summer Cool": {
-        "red": 0.990,
-        "green": 1.000,
-        "blue": 1.025,
-        "color": 0.98
-    },
-    "Autumn Warm": {
-        "red": 1.030,
-        "green": 1.005,
-        "blue": 0.970,
-        "color": 1.01
-    },
-    "Winter Cool": {
-        "red": 0.985,
-        "green": 0.995,
-        "blue": 1.030,
-        "color": 1.03
-    }
-}
+def show_photo_editor_page():
+    if st.button("← Back", key="editor_back"):
+        go_to_page("match_report")
 
+    st.markdown("### Step 6. Optimize Your Photo")
+    st.caption("Choose editing options to match your goal.")
+    st.write("")
 
-def apply_rgb_balance(
-    image,
-    red_factor=1.0,
-    green_factor=1.0,
-    blue_factor=1.0
-):
-    """
-    RGB 채널을 약하게 조절해 색온도를 보정합니다.
-    """
+    images = st.session_state.get("uploaded_images", [])
+    if not images:
+        st.error("사진을 찾을 수 없습니다. 다시 업로드해주세요.")
+        if st.button("Return to Upload"):
+            go_to_page("upload")
+        return
 
-    image = image.convert("RGB")
+    base_image = images[0]
 
-    red_channel, green_channel, blue_channel = image.split()
+    preview_col, option_col = st.columns([1, 1])
 
-    red_channel = red_channel.point(
-        lambda value: min(
-            255,
-            max(0, int(value * red_factor))
+    with preview_col:
+        st.image(base_image, use_container_width=True)
+
+    with option_col:
+        st.markdown("**Background**")
+        background_choice = st.radio(
+            "Background",
+            options=list(BACKGROUND_MAP.keys()),
+            label_visibility="collapsed",
+            key="editor_background_choice",
         )
-    )
-
-    green_channel = green_channel.point(
-        lambda value: min(
-            255,
-            max(0, int(value * green_factor))
-        )
-    )
-
-    blue_channel = blue_channel.point(
-        lambda value: min(
-            255,
-            max(0, int(value * blue_factor))
-        )
-    )
-
-    return Image.merge(
-        "RGB",
-        (
-            red_channel,
-            green_channel,
-            blue_channel
-        )
-    )
-
-
-def get_personal_color_name(color_analysis_result):
-    """
-    퍼스널컬러 분석 결과에서 계절명을 가져옵니다.
-    """
-
-    if not isinstance(color_analysis_result, dict):
-        return None
-
-    possible_keys = [
-        "season",
-        "personal_color",
-        "result",
-        "tone"
-    ]
-
-    for key in possible_keys:
-        value = color_analysis_result.get(key)
-
-        if isinstance(value, str):
-            return value
-
-    return None
-
-
-def apply_personal_color_adjustment(
-    image,
-    personal_color=None
-):
-    """
-    퍼스널컬러 결과에 따라 약한 색감 보정을 적용합니다.
-    """
-
-    if not personal_color:
-        return image
-
-    setting = PERSONAL_COLOR_SETTINGS.get(
-        personal_color
-    )
-
-    if setting is None:
-        return image
-
-    adjusted_image = apply_rgb_balance(
-        image=image,
-        red_factor=setting["red"],
-        green_factor=setting["green"],
-        blue_factor=setting["blue"]
-    )
-
-    adjusted_image = ImageEnhance.Color(
-        adjusted_image
-    ).enhance(
-        setting["color"]
-    )
-
-    return adjusted_image
-
-
-def enhance_photo(
-    image,
-    purpose="Resume",
-    personal_color=None
-):
-    """
-    사용 목적과 퍼스널컬러에 따라 사진을 자연스럽게 보정합니다.
-
-    적용 항목:
-    - 밝기
-    - 대비
-    - 채도
-    - 선명도
-    - 퍼스널컬러 기반 색온도
-    """
-
-    if not isinstance(image, Image.Image):
-        raise TypeError(
-            "image는 PIL.Image.Image 형식이어야 합니다."
+        st.caption(
+            "Blur / Solid Color / Office / Urban 옵션은 이번 데모에서는 지원하지 않습니다."
         )
 
-    setting = PURPOSE_SETTINGS.get(
-        purpose,
-        PURPOSE_SETTINGS["Resume"]
-    )
+    st.write("")
+    st.markdown("**Adjustments**")
 
-    enhanced_image = image.convert("RGB").copy()
+    brightness = st.slider("Brightness", 0.5, 1.5, 1.0, 0.05, key="editor_brightness")
+    saturation = st.slider("Saturation", 0.5, 1.5, 1.0, 0.05, key="editor_saturation")
+    sharpness = st.slider("Sharpness", 0.5, 2.0, 1.0, 0.05, key="editor_sharpness")
 
-    enhanced_image = ImageEnhance.Brightness(
-        enhanced_image
-    ).enhance(
-        setting["brightness"]
-    )
+    st.write("")
+    reset_col, apply_col = st.columns([1, 2])
 
-    enhanced_image = ImageEnhance.Contrast(
-        enhanced_image
-    ).enhance(
-        setting["contrast"]
-    )
+    with reset_col:
+        if st.button("Reset", use_container_width=True):
+            for key in ["editor_brightness", "editor_saturation", "editor_sharpness"]:
+                st.session_state.pop(key, None)
+            st.rerun()
 
-    enhanced_image = ImageEnhance.Color(
-        enhanced_image
-    ).enhance(
-        setting["color"]
-    )
+    with apply_col:
+        if st.button("Apply & Continue →", type="primary", use_container_width=True):
+            background_type = BACKGROUND_MAP[background_choice]
+            edit_option = "사진 보정 + 배경 변경" if background_type else "사진 보정"
 
-    enhanced_image = apply_personal_color_adjustment(
-        image=enhanced_image,
-        personal_color=personal_color
-    )
+            image_adjustments = {
+                "brightness": brightness,
+                "saturation": saturation,
+                "sharpness": sharpness,
+            }
 
-    enhanced_image = ImageEnhance.Sharpness(
-        enhanced_image
-    ).enhance(
-        setting["sharpness"]
-    )
+            with st.spinner("Applying your edits..."):
+                image_edit_result = process_images(
+                    images=[base_image],
+                    edit_option=edit_option,
+                    image_adjustments=image_adjustments,
+                    background_type=background_type,
+                    color_analysis_result=None,
+                )
 
-    enhanced_image = enhanced_image.filter(
-        ImageFilter.UnsharpMask(
-            radius=1,
-            percent=35,
-            threshold=4
-        )
-    )
-
-    return enhanced_image
+            if image_edit_result["success"]:
+                st.session_state["image_edit_result"] = image_edit_result
+                go_to_page("image_edit_result")
+            else:
+                st.error("이미지를 편집하지 못했습니다.")
+                for item in image_edit_result["results"]:
+                    if not item["success"]:
+                        st.warning(item.get("message", "Unknown error"))

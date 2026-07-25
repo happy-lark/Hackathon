@@ -19,12 +19,11 @@ MODEL_URL = (
 
 
 PERSONA_NAMES = [
-    "Warm",
-    "Confident",
     "Professional",
-    "Approachable"
+    "Confident",
+    "Approachable",
+    "Creative"
 ]
-
 
 def clamp(value, minimum=0.0, maximum=100.0):
     """
@@ -221,10 +220,10 @@ def normalize_persona(persona_scores):
 
     if total <= 0:
         return {
-            "Warm": 25.0,
-            "Confident": 25.0,
             "Professional": 25.0,
-            "Approachable": 25.0
+            "Confident": 25.0,
+            "Approachable": 25.0,
+            "Creative": 25.0
         }
 
     return {
@@ -240,36 +239,16 @@ def calculate_persona_from_features(features):
     """
     얼굴 특징 점수를 Persona 점수로 변환합니다.
     """
-    warm = (
-        features["Smile"] * 0.70
-        + features["Eye Openness"] * 0.30
-    )
-
-    confident = (
-        features["Frontality"] * 0.35
-        + features["Eye Openness"] * 0.25
-        + features["Head Level"] * 0.25
-        + features["Face Centering"] * 0.15
-    )
-
-    professional = (
-        features["Frontality"] * 0.30
-        + features["Head Level"] * 0.30
-        + features["Mouth Control"] * 0.25
-        + features["Face Centering"] * 0.15
-    )
-
-    approachable = (
-        features["Smile"] * 0.55
-        + features["Eye Openness"] * 0.25
-        + features["Frontality"] * 0.20
-    )
+    confident = features["Frontality"] * 0.35 + features["Eye Openness"] * 0.25 + features["Head Level"] * 0.25 + features["Face Centering"] * 0.15
+    professional = features["Frontality"] * 0.30 + features["Head Level"] * 0.30 + features["Mouth Control"] * 0.25 + features["Face Centering"] * 0.15
+    approachable = features["Smile"] * 0.55 + features["Eye Openness"] * 0.25 + features["Frontality"] * 0.20
+    creative = features["Smile"] * 0.40 + (100 - features["Mouth Control"]) * 0.30 + features["Eye Openness"] * 0.30
 
     raw_persona = {
-        "Warm": warm,
-        "Confident": confident,
         "Professional": professional,
-        "Approachable": approachable
+        "Confident": confident,
+        "Approachable": approachable,
+        "Creative": creative
     }
 
     return normalize_persona(

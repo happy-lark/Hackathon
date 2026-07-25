@@ -7,12 +7,9 @@ from utils.navigation import (
 )
 
 from components.persona_bar import render_all_persona_bars
-from components.feedback import generate_detailed_feedback
 from components.feature_bar import render_all_feature_bars
-from components.resume_styling import split_resume_colors
-from components.full_report import generate_full_report
-
-from pages.upload import (
+from components.feedback_report import generate_report_feedback
+from components.image_edit_ui import (
     show_image_edit_options,
     EDIT_NONE,
     EDIT_BACKGROUND,
@@ -291,25 +288,10 @@ def show_result_page():
         st.columns(4)
     )
 
-    column1.metric(
-        "Warm",
-        f"{detected_persona['Warm']}%"
-    )
-
-    column2.metric(
-        "Confident",
-        f"{detected_persona['Confident']}%"
-    )
-
-    column3.metric(
-        "Professional",
-        f"{detected_persona['Professional']}%"
-    )
-
-    column4.metric(
-        "Approachable",
-        f"{detected_persona['Approachable']}%"
-    )
+    column1.metric("Professional", f"{detected_persona['Professional']}%")
+    column2.metric("Confident", f"{detected_persona['Confident']}%")
+    column3.metric("Approachable", f"{detected_persona['Approachable']}%")
+    column4.metric("Creative", f"{detected_persona['Creative']}%")
 
     detected_dataframe = pd.DataFrame(
         {
@@ -380,10 +362,6 @@ def show_result_page():
         ]
     )
 
-    st.bar_chart(
-        comparison_chart
-    )
-    
     render_all_persona_bars(target_persona, detected_persona)
 
     match_score = calculate_match_score(
@@ -394,9 +372,7 @@ def show_result_page():
         "Persona Match Score",
         f"{match_score}%"
     )
-
-    from components.feedback_report import generate_report_feedback
-
+    
     report = generate_report_feedback(target_persona, detected_persona, selected_mode)
 
     st.subheader("📋 Persona Diagnostic Report")
@@ -417,46 +393,9 @@ def show_result_page():
 
     st.caption(report["closing"])
     
-    personal_color = analysis_result.get("personal_color")
 
-    if personal_color:
-        st.divider()
-        st.subheader("🎨 Personal Color & Resume Styling")
-        st.write(f"**{personal_color['season']}** (Confidence {personal_color['confidence']}%)")
-        st.write(personal_color["description"])
-
-        st.markdown("**추천 색상**")
-        for color in personal_color["recommended_colors"]:
-            st.markdown(f"- {color}")
-            
-        
-
-    full_report = generate_full_report(
-        target_persona, detected_persona, features, personal_color, selected_mode
-    )
-
-    st.divider()
-    st.subheader("📋 세부 특징 분석")
-
-    st.markdown("#### 표정/구도 특징")
-    for feat in full_report["sub_features"]:
-        st.write(f"- **{feat['name']}** ({feat['value']}) — {feat['blurb']}")
-
-    if full_report["color_profile"]:
-        st.markdown("#### 컬러 프로필")
-        for c in full_report["color_profile"]:
-            st.write(f"- **{c['name']}** ({c['value']}) — {c['blurb']}")
-
-    #3. Resume 맞춤 추천
-    resume_recommendation = analysis_result.get("resume_recommendation")
-
-    if resume_recommendation:
-        st.divider()
-        st.subheader("📄 Resume-Tailored Recommendation")
-        st.write(f"**업계 톤**: {resume_recommendation['industry_tone']}")
-        st.write(f"**배경 추천**: {resume_recommendation['background_advice']}")
-        st.write(f"**의상 추천**: {resume_recommendation['clothing_advice']}")
-        st.caption(f"💡 {resume_recommendation['keyword_tip']}")
+   
+   
     
     #show_image_edit_results()
 
@@ -502,7 +441,7 @@ def show_result_page():
                     edit_option=edit_option,
                     image_adjustments=image_adjustments,
                     background_type=background_type,
-                    color_analysis_result=color_analysis_result,
+                    color_analysis_result=None,
                 )
 
             if image_edit_result["success"]:

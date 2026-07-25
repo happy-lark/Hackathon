@@ -1,0 +1,16 @@
+.result-notice {
+    margin-top: 20px;
+    padding: 16px 18px;
+
+    border-radius: 14px;
+
+    background-color: rgba(
+        120,
+        120,
+        120,
+        0.08
+    );
+
+    font-size: 14px;
+    line-height: 1.6;
+}

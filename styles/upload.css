@@ -1,0 +1,616 @@
+/* ========================================
+   UPLOAD PAGE
+======================================== */
+
+/* ========================================
+   상단 진행 단계
+======================================== */
+
+.upload-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    padding: 4px 0;
+}
+
+.upload-progress-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 31px;
+    height: 31px;
+
+    border-radius: 50%;
+
+    background-color: #f1f0f5;
+    color: #8d8a99;
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.upload-progress-dot.active {
+    background: linear-gradient(
+        135deg,
+        #6650e8,
+        #7145ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 13px
+        rgba(103, 75, 239, 0.25);
+}
+
+.upload-progress-dot.completed {
+    background-color: #f0edfb;
+    color: #777389;
+}
+
+.upload-progress-line {
+    width: 29px;
+    height: 2px;
+
+    margin: 0 5px;
+
+    background-color: #e8e6ed;
+}
+
+.upload-progress-line.completed {
+    background-color: #ddd8ef;
+}
+
+
+/* ========================================
+   상단 Back 버튼
+======================================== */
+
+.st-key-upload_top_back button {
+    justify-content: flex-start;
+
+    min-height: 38px;
+    padding: 0;
+
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #25233b;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.st-key-upload_top_back button:hover {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #6847f5;
+
+    transform: none;
+}
+
+.st-key-upload_top_back button:focus {
+    border: none;
+    box-shadow: none;
+}
+
+
+/* ========================================
+   페이지 제목
+======================================== */
+
+.upload-page-header {
+    margin-top: 34px;
+    margin-bottom: 40px;
+
+    text-align: center;
+}
+
+.upload-page-title {
+    margin-bottom: 12px;
+
+    color: #202039;
+
+    font-size: 30px;
+    font-weight: 820;
+    line-height: 1.3;
+    letter-spacing: -0.7px;
+}
+
+.upload-page-description {
+    color: #666479;
+
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   File Uploader 바깥 영역
+======================================== */
+
+[data-testid="stFileUploader"] {
+    max-width: 800px;
+
+    margin: 0 auto;
+    padding: 0;
+
+    border: none;
+    border-radius: 20px;
+
+    background: transparent;
+}
+
+
+/* ========================================
+   Drag & Drop 영역
+======================================== */
+
+[data-testid="stFileUploaderDropzone"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 275px;
+    padding: 30px 35px;
+
+    border: 2px dashed #dfdce8;
+    border-radius: 19px;
+
+    background-color: #ffffff;
+}
+
+[data-testid="stFileUploaderDropzone"]:hover {
+    border-color: #967eef;
+
+    background-color: #fcfbff;
+}
+
+
+/* 업로드 아이콘 */
+
+[data-testid="stFileUploaderDropzone"] svg {
+    width: 55px;
+    height: 55px;
+
+    margin-bottom: 11px;
+
+    color: #bbb6d2;
+    fill: #bbb6d2;
+}
+
+
+/* ========================================
+   기본 업로더 문구 재구성
+======================================== */
+
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    margin: 0;
+
+    text-align: center;
+}
+
+
+/* Streamlit 기본 문구 숨기기 */
+
+[data-testid="stFileUploaderDropzoneInstructions"] span {
+    font-size: 0;
+}
+
+
+/* Drag & drop your photos here */
+
+[data-testid="stFileUploaderDropzoneInstructions"] span::before {
+    content: "Drag & drop your photos here";
+
+    display: block;
+
+    color: #29263e;
+
+    font-size: 16px;
+    font-weight: 720;
+    line-height: 1.5;
+}
+
+
+/* or */
+
+[data-testid="stFileUploaderDropzoneInstructions"] span::after {
+    content: "or";
+
+    display: block;
+
+    margin-top: 12px;
+
+    color: #777487;
+
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+/* 기존 용량 안내 문구 숨기기 */
+
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+    display: none;
+}
+
+
+/* ========================================
+   Choose Files 버튼
+======================================== */
+
+[data-testid="stFileUploaderDropzone"] button {
+    min-width: 180px;
+    min-height: 48px;
+
+    margin-top: 14px;
+    padding: 0 27px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: linear-gradient(
+        90deg,
+        #6646e7,
+        #8451ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 8px 18px
+        rgba(104, 71, 245, 0.22);
+}
+
+
+/* Streamlit 기본 Browse files 글자 숨기기 */
+
+[data-testid="stFileUploaderDropzone"] button p {
+    font-size: 0;
+}
+
+
+/* Choose Files 글자 추가 */
+
+[data-testid="stFileUploaderDropzone"] button p::after {
+    content: "Choose Files";
+
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 750;
+}
+
+[data-testid="stFileUploaderDropzone"] button:hover {
+    border: none;
+
+    background: linear-gradient(
+        90deg,
+        #5c3ddb,
+        #7746e4
+    );
+
+    color: #ffffff;
+}
+
+
+/* 업로드 가능 파일 안내 */
+
+[data-testid="stFileUploaderDropzone"]::after {
+    content: "You can upload up to 5 photos (JPG, PNG)";
+
+    display: block;
+
+    margin-top: 15px;
+
+    color: #777487;
+
+    font-size: 13px;
+    font-weight: 500;
+}
+
+
+/* ========================================
+   업로드 파일 목록 숨기기
+======================================== */
+
+/*
+미리보기는 아래의 커스텀 5열 영역에서 표시하므로
+Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
+*/
+
+[data-testid="stFileUploaderFile"] {
+    display: none;
+}
+
+
+/* ========================================
+   미리보기 영역
+======================================== */
+
+.upload-preview-space {
+    height: 38px;
+}
+
+[data-testid="stHorizontalBlock"]:has(
+    .upload-empty-photo
+) {
+    align-items: flex-start;
+}
+
+
+/* 업로드 이미지 */
+
+[data-testid="stImage"] img {
+    width: 100%;
+    height: 154px;
+
+    border-radius: 9px;
+
+    object-fit: cover;
+
+    box-shadow: 0 3px 10px
+        rgba(40, 35, 75, 0.08);
+}
+
+
+/* 빈 이미지 자리 */
+
+.upload-empty-photo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    height: 154px;
+
+    margin-top: 29px;
+
+    border: 1px dashed #e3dfeb;
+    border-radius: 9px;
+
+    background-color: #fbfaff;
+
+    color: #cbc5dd;
+}
+
+.upload-empty-photo span {
+    font-size: 23px;
+    font-weight: 500;
+}
+
+
+/* ========================================
+   사진 삭제 버튼
+======================================== */
+
+.st-key-remove_uploaded_photo_0 button,
+.st-key-remove_uploaded_photo_1 button,
+.st-key-remove_uploaded_photo_2 button,
+.st-key-remove_uploaded_photo_3 button,
+.st-key-remove_uploaded_photo_4 button {
+    position: relative;
+    z-index: 2;
+
+    width: 29px;
+    min-width: 29px;
+    height: 29px;
+    min-height: 29px;
+
+    margin-bottom: -25px;
+    padding: 0;
+
+    border: none;
+    border-radius: 50%;
+
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px
+        rgba(40, 35, 80, 0.13);
+
+    color: #5d43d3;
+
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.st-key-remove_uploaded_photo_0 button:hover,
+.st-key-remove_uploaded_photo_1 button:hover,
+.st-key-remove_uploaded_photo_2 button:hover,
+.st-key-remove_uploaded_photo_3 button:hover,
+.st-key-remove_uploaded_photo_4 button:hover {
+    border: none;
+
+    background-color: #6847f5;
+    color: #ffffff;
+
+    transform: none;
+}
+
+
+/* ========================================
+   Tips 카드
+======================================== */
+
+.upload-tips-card {
+    max-width: 800px;
+
+    margin: 38px auto 0 auto;
+    padding: 22px 27px;
+
+    border: 1px solid rgba(
+        105,
+        85,
+        215,
+        0.07
+    );
+
+    border-radius: 15px;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #fcfbff
+    );
+
+    box-shadow: 0 7px 22px
+        rgba(70, 55, 140, 0.045);
+}
+
+.upload-tips-title {
+    margin-bottom: 14px;
+
+    color: #292742;
+
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.upload-tip-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    margin-top: 8px;
+
+    color: #59576d;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.upload-tip-item span {
+    color: #28a66f;
+
+    font-size: 17px;
+    font-weight: 850;
+}
+
+
+/* ========================================
+   Continue 버튼
+======================================== */
+
+.upload-continue-space {
+    height: 27px;
+}
+
+.st-key-upload_continue_button {
+    max-width: 800px;
+
+    margin: 0 auto;
+}
+
+.st-key-upload_continue_button button {
+    min-height: 54px;
+
+    border-radius: 10px;
+
+    font-size: 17px;
+    font-weight: 750;
+}
+
+
+/* ========================================
+   모바일 화면
+======================================== */
+
+@media (max-width: 700px) {
+    .upload-progress-line {
+        width: 12px;
+        margin: 0 3px;
+    }
+
+    .upload-progress-dot {
+        width: 28px;
+        height: 28px;
+
+        font-size: 12px;
+    }
+
+    .upload-page-header {
+        margin-top: 27px;
+        margin-bottom: 30px;
+    }
+
+    .upload-page-title {
+        font-size: 25px;
+    }
+
+    .upload-page-description {
+        font-size: 15px;
+    }
+
+    [data-testid="stFileUploaderDropzone"] {
+        min-height: 235px;
+        padding: 26px 18px;
+    }
+
+    [data-testid="stFileUploaderDropzone"] button {
+        min-width: 155px;
+    }
+
+    [data-testid="stImage"] img,
+    .upload-empty-photo {
+        height: 115px;
+    }
+
+    .upload-empty-photo {
+        margin-top: 29px;
+    }
+
+    .upload-tips-card {
+        margin-top: 28px;
+        padding: 20px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .upload-progress-line {
+        width: 7px;
+        margin: 0 2px;
+    }
+
+    .upload-progress-dot {
+        width: 25px;
+        height: 25px;
+
+        font-size: 11px;
+    }
+
+    .upload-page-title {
+        font-size: 23px;
+    }
+
+    [data-testid="stFileUploaderDropzone"] {
+        min-height: 220px;
+        padding: 22px 14px;
+    }
+
+    [data-testid="stFileUploaderDropzoneInstructions"]
+    span::before {
+        font-size: 14px;
+    }
+
+    [data-testid="stImage"] img,
+    .upload-empty-photo {
+        height: 92px;
+    }
+}
