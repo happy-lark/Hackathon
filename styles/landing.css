@@ -4,15 +4,44 @@
 
 
 /* ========================================
-   상단 로고 및 내비게이션
+   상단 로고
 ======================================== */
 
 .landing-logo {
     display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    width: 100%;
+    min-height: 52px;
+}
+
+.landing-logo-image {
+    display: block;
+
+    width: 205px;
+    max-width: 100%;
+    height: 52px;
+
+    margin: 0;
+    padding: 0;
+
+    border: none;
+    border-radius: 0;
+
+    object-fit: contain;
+    object-position: left center;
+}
+
+
+/* 로고 파일이 없을 때 대체 표시 */
+
+.landing-logo-fallback {
+    display: flex;
     align-items: center;
     gap: 10px;
 
-    min-height: 48px;
+    min-height: 52px;
 
     color: #222238;
 
@@ -20,13 +49,15 @@
     font-weight: 800;
 }
 
-.landing-logo-icon {
+.landing-logo-fallback-icon {
     display: inline-flex;
     justify-content: center;
     align-items: center;
 
-    width: 36px;
-    height: 36px;
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
 
     border-radius: 11px;
 
@@ -42,21 +73,28 @@
     font-weight: 800;
 }
 
+
+/* ========================================
+   상단 내비게이션
+======================================== */
+
 .landing-nav-item {
     display: flex;
     justify-content: center;
     align-items: center;
 
-    min-height: 48px;
+    min-height: 52px;
 
-    color: #414153;
+    color: #29283e;
 
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 650;
+    line-height: 1.3;
     text-align: center;
 }
 
 .landing-nav-divider {
+    width: 100%;
     height: 1px;
 
     margin-top: 10px;
@@ -75,11 +113,28 @@
    상단 Get Started 버튼
 ======================================== */
 
+.st-key-landing_top_start {
+    display: flex;
+    align-items: center;
+
+    min-height: 52px;
+}
+
+.st-key-landing_top_start
+[data-testid="stButton"] {
+    width: 100%;
+}
+
 .st-key-landing_top_start button {
-    min-height: 44px;
+    width: 100%;
+    min-height: 48px;
+
     padding: 0 20px;
 
     border-radius: 13px;
+
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .st-key-landing_top_start button p {
@@ -119,6 +174,27 @@
 
 
 /* ========================================
+   메인 분석 시작 버튼
+======================================== */
+
+.st-key-landing_main_start button {
+    min-height: 52px;
+
+    border-radius: 13px;
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.st-key-landing_main_start button p {
+    margin: 0;
+    padding: 0;
+
+    line-height: 1.2;
+}
+
+
+/* ========================================
    신뢰 문구
 ======================================== */
 
@@ -126,31 +202,34 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
 
-    margin-top: 26px;
+    margin-top: 27px;
 
     color: #777789;
 
     font-size: 13px;
-}
-
-.landing-avatar-group {
-    margin-right: 5px;
-
-    font-size: 21px;
-    letter-spacing: -7px;
+    line-height: 1.4;
 }
 
 .landing-stars {
-    color: #ffba2f;
+    display: inline-block;
 
-    font-size: 14px;
+    color: #ffad1f;
+
+    font-size: 15px;
+    line-height: 1;
     letter-spacing: 2px;
 }
 
 .landing-trust-text {
+    display: inline-block;
+
+    color: #777789;
+
+    font-size: 13px;
     font-weight: 600;
+    line-height: 1.4;
 }
 
 
@@ -186,13 +265,27 @@
     font-size: 120px;
 }
 
+
 /*
-landing.css는 랜딩 페이지에서만 로드되므로
-랜딩 페이지의 마스코트 이미지에만 적용됨
+랜딩 페이지에서 st.image로 출력한 Hero 마스코트
 */
 
+[data-testid="stImage"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 [data-testid="stImage"] img {
+    display: block;
+
+    width: 100%;
+    max-width: 650px;
+
     border-radius: 24px;
+
+    object-fit: contain;
+    object-position: center;
 }
 
 
@@ -205,8 +298,12 @@ landing.css는 랜딩 페이지에서만 로드되므로
 }
 
 .landing-feature-card {
-    min-height: 185px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
 
+    min-height: 185px;
     padding: 28px 20px;
 
     border: 1px solid rgba(
@@ -221,7 +318,8 @@ landing.css는 랜딩 페이지에서만 로드되므로
     background-color: #ffffff;
 
     box-shadow:
-        0 14px 38px rgba(
+        0 14px 38px
+        rgba(
             70,
             55,
             140,
@@ -236,6 +334,8 @@ landing.css는 랜딩 페이지에서만 로드되므로
     justify-content: center;
     align-items: center;
 
+    flex-shrink: 0;
+
     width: 55px;
     height: 55px;
 
@@ -246,21 +346,30 @@ landing.css는 랜딩 페이지에서만 로드되므로
     background-color: #f1edff;
 
     font-size: 27px;
+    line-height: 1;
 }
 
 .landing-feature-title {
-    margin-bottom: 9px;
+    display: block;
+
+    margin: 0 0 9px 0;
 
     color: #29293d;
 
     font-size: 17px;
     font-weight: 750;
+    line-height: 1.4;
 }
 
 .landing-feature-description {
+    display: block;
+
+    margin: 0;
+
     color: #777789;
 
     font-size: 14px;
+    font-weight: 400;
     line-height: 1.6;
 }
 
@@ -270,6 +379,28 @@ landing.css는 랜딩 페이지에서만 로드되므로
 ======================================== */
 
 @media (max-width: 700px) {
+    .landing-logo-image {
+        width: 165px;
+        height: 44px;
+    }
+
+    .landing-logo {
+        min-height: 44px;
+    }
+
+    .landing-logo-fallback {
+        min-height: 44px;
+
+        font-size: 18px;
+    }
+
+    .landing-logo-fallback-icon {
+        width: 32px;
+        height: 32px;
+
+        font-size: 17px;
+    }
+
     .landing-nav-item {
         display: none;
     }
@@ -302,5 +433,47 @@ landing.css는 랜딩 페이지에서만 로드되므로
 
     .mascot-emoji {
         font-size: 90px;
+    }
+
+    [data-testid="stImage"] img {
+        max-width: 460px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .landing-logo-image {
+        width: 140px;
+        height: 40px;
+    }
+
+    .landing-hero-title {
+        font-size: 34px;
+    }
+
+    .landing-hero-description {
+        font-size: 15px;
+    }
+
+    .landing-trust-row {
+        gap: 7px;
+
+        font-size: 12px;
+    }
+
+    .landing-stars {
+        font-size: 13px;
+    }
+
+    .landing-trust-text {
+        font-size: 12px;
+    }
+
+    [data-testid="stImage"] img {
+        max-width: 340px;
     }
 }
