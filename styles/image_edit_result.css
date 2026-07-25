@@ -1,0 +1,469 @@
+/* ========================================
+   OPTIMIZED IMAGE RESULT PAGE
+======================================== */
+
+
+/* ========================================
+   상단 Back 표시
+======================================== */
+
+.optimized-back-placeholder {
+    display: flex;
+    align-items: center;
+
+    min-height: 38px;
+
+    color: #25233b;
+
+    font-size: 14px;
+    font-weight: 750;
+
+    cursor: default;
+}
+
+
+/* ========================================
+   상단 진행 단계
+======================================== */
+
+.optimized-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    padding: 4px 0;
+}
+
+.optimized-progress-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 29px;
+    height: 29px;
+
+    border-radius: 50%;
+
+    background-color: #f1f0f5;
+    color: #8d8a99;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.optimized-progress-dot.completed {
+    background-color: #f0edfb;
+    color: #777389;
+}
+
+.optimized-progress-dot.active {
+    background: linear-gradient(
+        135deg,
+        #6650e8,
+        #7145ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 13px
+        rgba(103, 75, 239, 0.25);
+}
+
+.optimized-progress-line {
+    width: 18px;
+    height: 2px;
+
+    margin: 0 4px;
+
+    background-color: #e8e6ed;
+}
+
+.optimized-progress-line.completed {
+    background-color: #ddd8ef;
+}
+
+
+/* ========================================
+   페이지 제목
+======================================== */
+
+.optimized-page-header {
+    margin-top: 39px;
+    margin-bottom: 38px;
+
+    text-align: center;
+}
+
+.optimized-page-title {
+    margin-bottom: 10px;
+
+    color: #202039;
+
+    font-size: 30px;
+    font-weight: 820;
+    line-height: 1.3;
+    letter-spacing: -0.7px;
+}
+
+.optimized-page-description {
+    color: #68667a;
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   Before / After 이미지
+======================================== */
+
+.optimized-comparison {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        54px
+        minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+
+    width: 100%;
+    max-width: 800px;
+
+    margin: 0 auto;
+}
+
+.optimized-image-column {
+    min-width: 0;
+
+    text-align: center;
+}
+
+.optimized-image-wrapper {
+    overflow: hidden;
+
+    width: 100%;
+    aspect-ratio: 0.84;
+
+    border: 1px solid rgba(
+        105,
+        85,
+        215,
+        0.10
+    );
+
+    border-radius: 17px;
+
+    background-color: #f4f3f8;
+
+    box-shadow: 0 9px 28px
+        rgba(70, 55, 140, 0.07);
+}
+
+.optimized-image {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+.optimized-image-label {
+    margin-top: 13px;
+
+    color: #575469;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.optimized-image-label.after {
+    color: #6847f5;
+}
+
+.optimized-arrow {
+    color: #9273f3;
+
+    font-size: 45px;
+    font-weight: 700;
+    text-align: center;
+
+    text-shadow: 0 4px 12px
+        rgba(104, 71, 245, 0.20);
+}
+
+
+/* ========================================
+   결과 카드 영역
+======================================== */
+
+.optimized-result-space {
+    height: 35px;
+}
+
+.optimized-result-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.45fr)
+        minmax(220px, 0.85fr);
+    gap: 20px;
+
+    width: 100%;
+    max-width: 800px;
+
+    margin: 0 auto;
+}
+
+.optimized-result-card {
+    min-height: 190px;
+
+    padding: 24px 26px;
+
+    border: 1px solid rgba(
+        105,
+        85,
+        215,
+        0.10
+    );
+
+    border-radius: 17px;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #fbfaff
+    );
+
+    box-shadow: 0 8px 24px
+        rgba(70, 55, 140, 0.05);
+}
+
+.optimized-result-card-title {
+    margin-bottom: 20px;
+
+    color: #292742;
+
+    font-size: 16px;
+    font-weight: 800;
+}
+
+
+/* ========================================
+   개선 요약
+======================================== */
+
+.optimized-improvement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.optimized-improvement-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+
+    color: #59576d;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.optimized-improvement-item span {
+    flex-shrink: 0;
+
+    color: #28a66f;
+
+    font-size: 16px;
+    font-weight: 850;
+}
+
+
+/* ========================================
+   Match Score
+======================================== */
+
+.optimized-result-card.score-card {
+    display: flex;
+    flex-direction: column;
+
+    text-align: center;
+}
+
+.optimized-result-card.score-card
+.optimized-result-card-title {
+    text-align: left;
+}
+
+.optimized-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+
+    margin-top: 7px;
+
+    color: #28a66f;
+
+    font-size: 31px;
+    font-weight: 830;
+    line-height: 1.2;
+}
+
+.optimized-score strong {
+    color: #68667a;
+
+    font-size: 23px;
+    font-weight: 600;
+}
+
+.optimized-score-message {
+    margin-top: 17px;
+
+    color: #28a66f;
+
+    font-size: 16px;
+    font-weight: 780;
+}
+
+
+/* ========================================
+   다운로드 버튼
+======================================== */
+
+.optimized-download-space {
+    height: 28px;
+}
+
+.st-key-optimized_download_button button,
+.st-key-optimized_circle_download_button button {
+    min-height: 53px;
+
+    border-radius: 11px;
+
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.st-key-optimized_download_button button {
+    border: none;
+
+    background: linear-gradient(
+        90deg,
+        #6847f5,
+        #8755f7
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 9px 21px
+        rgba(104, 71, 245, 0.20);
+}
+
+.st-key-optimized_download_button button p {
+    color: #ffffff;
+}
+
+.st-key-optimized_circle_download_button button {
+    border: 1px solid #8b6ee9;
+
+    background-color: #ffffff;
+
+    color: #6847f5;
+
+    box-shadow: none;
+}
+
+.st-key-optimized_circle_download_button button p {
+    color: #6847f5;
+}
+
+
+/* ========================================
+   모바일
+======================================== */
+
+@media (max-width: 700px) {
+    .optimized-progress-line {
+        width: 8px;
+        margin: 0 2px;
+    }
+
+    .optimized-progress-dot {
+        width: 25px;
+        height: 25px;
+
+        font-size: 10px;
+    }
+
+    .optimized-page-header {
+        margin-top: 29px;
+        margin-bottom: 30px;
+    }
+
+    .optimized-page-title {
+        font-size: 25px;
+    }
+
+    .optimized-comparison {
+        grid-template-columns:
+            minmax(0, 1fr)
+            30px
+            minmax(0, 1fr);
+
+        gap: 9px;
+    }
+
+    .optimized-arrow {
+        font-size: 29px;
+    }
+
+    .optimized-image-wrapper {
+        border-radius: 12px;
+    }
+
+    .optimized-result-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .optimized-result-card {
+        min-height: auto;
+
+        padding: 21px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .optimized-progress-line {
+        display: none;
+    }
+
+    .optimized-progress {
+        justify-content: space-between;
+    }
+
+    .optimized-progress-dot {
+        width: 24px;
+        height: 24px;
+    }
+
+    .optimized-comparison {
+        grid-template-columns: 1fr;
+    }
+
+    .optimized-arrow {
+        transform: rotate(90deg);
+    }
+
+    .optimized-image-wrapper {
+        max-width: 280px;
+
+        margin: 0 auto;
+    }
+}

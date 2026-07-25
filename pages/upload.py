@@ -3,11 +3,7 @@ import streamlit as st
 from PIL import Image
 from textwrap import dedent
 
-from analysis.analyzer import (
-    analyze_multiple_face_personas
-)
 from utils.navigation import go_to_page
-from analysis.color_helper import suggest_colors_for_photo
 
 
 MAX_IMAGES = 5
@@ -290,44 +286,6 @@ def show_image_errors(image_errors):
             f'({error["filename"]}) could not be opened.'
         )
 
-
-def run_persona_analysis(images):
-    """
-    업로드한 사진에 Persona 분석을 실행합니다.
-    """
-
-    with st.spinner("Analyzing all uploaded photos..."):
-        analysis_result = analyze_multiple_face_personas(images)
-
-    st.session_state.pop("analysis_result", None)
-
-    if analysis_result["success"]:
-        color_recommendation = suggest_colors_for_photo(images[0])
-        if not color_recommendation.get("success"):
-            color_recommendation = None
-
-        analysis_result["color_recommendation"] = color_recommendation
-
-        st.session_state["analysis_result"] = analysis_result
-        go_to_page("match_report")
-        return
-
-    error_message = analysis_result.get(
-        "message",
-        "The photos could not be analyzed."
-    )
-
-    st.error(error_message)
-
-    individual_results = analysis_result.get("individual_results", [])
-
-    for item in individual_results:
-        if not item.get("success", False):
-            image_index = item.get("image_index", 0) + 1
-            message = item.get("message", "The face could not be detected.")
-            st.warning(f"Photo {image_index}: {message}")
-
-
 def show_upload_page():
     """
     Step 3. 사진 업로드 페이지입니다.
@@ -355,7 +313,11 @@ def show_upload_page():
 
     uploaded_files = st.file_uploader(
         "Upload your photos",
-        type=["jpg", "jpeg", "png"],
+        type=[
+            "jpg",
+            "jpeg",
+            "png"
+        ],
         accept_multiple_files=True,
         label_visibility="collapsed",
         key=f"photo_uploader_{uploader_version}"
@@ -487,6 +449,9 @@ def show_upload_page():
     )
 
     if continue_clicked:
-        run_persona_analysis(
-            images
-        )
+        st.session_state.pop(
+        "result",
+        None
+    )
+        go_to_page("ai_analysis")
+        

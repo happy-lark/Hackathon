@@ -1,0 +1,419 @@
+/* ========================================
+   USAGE CONTEXT PAGE
+======================================== */
+
+
+/* ========================================
+   상단 진행 단계
+======================================== */
+
+.context-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    padding: 4px 0;
+}
+
+.context-progress-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 31px;
+    height: 31px;
+
+    border-radius: 50%;
+
+    background-color: #f1f0f5;
+    color: #8d8a99;
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.context-progress-dot.completed {
+    background-color: #f0edfb;
+    color: #777389;
+}
+
+.context-progress-dot.active {
+    background: linear-gradient(
+        135deg,
+        #6650e8,
+        #7145ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 13px
+        rgba(103, 75, 239, 0.25);
+}
+
+.context-progress-line {
+    width: 29px;
+    height: 2px;
+
+    margin: 0 5px;
+
+    background-color: #e8e6ed;
+}
+
+.context-progress-line.completed {
+    background-color: #d8d1f4;
+}
+
+
+/* ========================================
+   Back 버튼
+======================================== */
+
+.st-key-context_back button {
+    justify-content: flex-start;
+
+    min-height: 38px;
+    padding: 0;
+
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #25233b;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.st-key-context_back button:hover {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #6847f5;
+
+    transform: none;
+}
+
+.st-key-context_back button:focus {
+    border: none;
+    box-shadow: none;
+}
+
+
+/* ========================================
+   페이지 제목
+======================================== */
+
+.context-page-header {
+    margin-top: 42px;
+    margin-bottom: 35px;
+
+    text-align: center;
+}
+
+.context-page-title {
+    margin-bottom: 10px;
+
+    color: #202039;
+
+    font-size: 30px;
+    font-weight: 820;
+    line-height: 1.3;
+    letter-spacing: -0.7px;
+}
+
+.context-page-description {
+    color: #68667a;
+
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   Context Radio 카드
+======================================== */
+
+.st-key-context_usage_radio
+[data-testid="stRadio"] {
+    width: 100%;
+}
+
+.st-key-context_usage_radio
+[data-testid="stRadio"]
+[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+
+/* 각 선택 카드 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"] {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    min-height: 91px;
+
+    margin: 0 !important;
+    padding: 17px 58px 17px 22px;
+
+    border: 1.5px solid #e7e4ed;
+    border-radius: 15px;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #fdfcff
+    );
+
+    box-shadow: 0 5px 16px
+        rgba(70, 55, 140, 0.025);
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"]:hover {
+    border-color: #aa96ef;
+
+    background-color: #fcfaff;
+
+    box-shadow: 0 8px 22px
+        rgba(104, 71, 245, 0.07);
+
+    transform: translateY(-1px);
+}
+
+
+/* 기본 Radio 원 숨기기 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"]
+> div:first-child {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    overflow: hidden;
+
+    opacity: 0;
+}
+
+
+/* 카드 내부 텍스트 영역 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"]
+> div:last-child {
+    width: 100%;
+}
+
+
+/* 제목 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"] p {
+    margin: 0;
+
+    color: #292742;
+
+    font-size: 16px;
+    font-weight: 780;
+    line-height: 1.4;
+}
+
+
+/* 설명 Caption */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"] small {
+    display: block;
+
+    margin-top: 4px;
+    margin-left: 35px;
+
+    color: #767386;
+
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.45;
+}
+
+
+/* 선택된 카드 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"]:has(
+    input:checked
+) {
+    border-color: #7c5ce7;
+
+    background: linear-gradient(
+        145deg,
+        #faf8ff,
+        #ffffff
+    );
+
+    box-shadow:
+        0 0 0 1px
+            rgba(124, 92, 231, 0.12),
+        0 9px 25px
+            rgba(104, 71, 245, 0.08);
+}
+
+
+/* 선택 체크 아이콘 */
+
+.st-key-context_usage_radio
+label[data-baseweb="radio"]:has(
+    input:checked
+)::after {
+    content: "✓";
+
+    position: absolute;
+    top: 50%;
+    right: 20px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 25px;
+    height: 25px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #6847f5,
+        #8755f7
+    );
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 850;
+
+    transform: translateY(-50%);
+
+    box-shadow: 0 4px 10px
+        rgba(104, 71, 245, 0.22);
+}
+
+
+/* ========================================
+   Continue 버튼
+======================================== */
+
+.context-continue-space {
+    height: 50px;
+}
+
+.st-key-context_continue_button button {
+    min-height: 55px;
+
+    border-radius: 11px;
+
+    font-size: 17px;
+    font-weight: 750;
+}
+
+
+/* ========================================
+   모바일
+======================================== */
+
+@media (max-width: 700px) {
+    .context-progress-line {
+        width: 12px;
+
+        margin: 0 3px;
+    }
+
+    .context-progress-dot {
+        width: 28px;
+        height: 28px;
+
+        font-size: 12px;
+    }
+
+    .context-page-header {
+        margin-top: 30px;
+        margin-bottom: 29px;
+    }
+
+    .context-page-title {
+        font-size: 25px;
+    }
+
+    .context-page-description {
+        font-size: 15px;
+    }
+
+    .st-key-context_usage_radio
+    label[data-baseweb="radio"] {
+        min-height: 84px;
+
+        padding:
+            15px
+            50px
+            15px
+            17px;
+    }
+
+    .st-key-context_usage_radio
+    label[data-baseweb="radio"] p {
+        font-size: 14px;
+    }
+
+    .st-key-context_usage_radio
+    label[data-baseweb="radio"] small {
+        margin-left: 30px;
+
+        font-size: 12px;
+    }
+
+    .context-continue-space {
+        height: 35px;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .context-progress-line {
+        width: 7px;
+        margin: 0 2px;
+    }
+
+    .context-progress-dot {
+        width: 25px;
+        height: 25px;
+
+        font-size: 11px;
+    }
+
+    .context-page-title {
+        font-size: 23px;
+    }
+}

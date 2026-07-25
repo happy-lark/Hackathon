@@ -1,0 +1,486 @@
+/* ========================================
+   PHOTO EDITOR PAGE
+======================================== */
+
+
+/* 전체 페이지 너비 */
+
+[data-testid="stMainBlockContainer"] {
+    max-width: 760px;
+    padding-top: 25px;
+    padding-bottom: 45px;
+}
+
+
+/* ========================================
+   상단 Back 버튼
+======================================== */
+
+.st-key-photo_editor_back button {
+    justify-content: flex-start;
+
+    min-height: 36px;
+    padding: 0;
+
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #25233b;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.st-key-photo_editor_back button:hover {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #6847f5;
+    transform: none;
+}
+
+
+/* ========================================
+   진행 단계
+======================================== */
+
+.photo-editor-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+}
+
+.photo-editor-progress-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-shrink: 0;
+
+    width: 28px;
+    height: 28px;
+
+    border-radius: 50%;
+
+    background-color: #f0eef5;
+    color: #8b8798;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.photo-editor-progress-dot.completed {
+    background-color: #f0edfb;
+    color: #777389;
+}
+
+.photo-editor-progress-dot.active {
+    background: linear-gradient(
+        135deg,
+        #6650e8,
+        #7145ef
+    );
+
+    color: #ffffff;
+
+    box-shadow: 0 5px 13px
+        rgba(103, 75, 239, 0.25);
+}
+
+.photo-editor-progress-line {
+    width: 22px;
+    height: 2px;
+
+    margin: 0 4px;
+
+    background-color: #e6e3ed;
+}
+
+.photo-editor-progress-line.completed {
+    background-color: #d8d1f4;
+}
+
+
+/* ========================================
+   제목
+======================================== */
+
+.photo-editor-header {
+    margin-top: 28px;
+    margin-bottom: 30px;
+
+    text-align: center;
+}
+
+.photo-editor-title {
+    margin-bottom: 8px;
+
+    color: #202039;
+
+    font-size: 26px;
+    font-weight: 820;
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+}
+
+.photo-editor-description {
+    color: #68667a;
+
+    font-size: 14px;
+}
+
+
+/* ========================================
+   이미지
+======================================== */
+
+.stImage img {
+    width: 100%;
+
+    border-radius: 14px;
+
+    object-fit: cover;
+
+    box-shadow: 0 7px 20px
+        rgba(40, 35, 75, 0.08);
+}
+
+
+/* ========================================
+   Background 제목
+======================================== */
+
+.st-key-photo_editor_background {
+    width: 100%;
+}
+
+.st-key-photo_editor_background
++ div {
+    width: 100%;
+}
+
+
+/* 일반 소제목 */
+
+h4 {
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+
+    color: #292742 !important;
+
+    font-size: 17px !important;
+    font-weight: 800 !important;
+}
+
+
+/* ========================================
+   Background 카드형 Radio
+======================================== */
+
+.st-key-photo_editor_background
+[data-testid="stRadio"]
+[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.st-key-photo_editor_background
+label[data-baseweb="radio"] {
+    position: relative;
+
+    width: 100%;
+
+    margin: 0 !important;
+    padding: 10px 42px 10px 13px;
+
+    border: 1.5px solid #e6e3ec;
+    border-radius: 10px;
+
+    background-color: #ffffff;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.st-key-photo_editor_background
+label[data-baseweb="radio"]:hover {
+    border-color: #a996ef;
+
+    background-color: #fbfaff;
+}
+
+.st-key-photo_editor_background
+label[data-baseweb="radio"]:has(
+    input:checked
+) {
+    border-color: #7555e8;
+
+    background: linear-gradient(
+        145deg,
+        #faf8ff,
+        #ffffff
+    );
+
+    box-shadow: 0 0 0 1px
+        rgba(117, 85, 232, 0.10);
+}
+
+
+/* 기본 radio 원 숨김 */
+
+.st-key-photo_editor_background
+label[data-baseweb="radio"]
+> div:first-child {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    overflow: hidden;
+
+    opacity: 0;
+}
+
+
+/* 선택 체크 */
+
+.st-key-photo_editor_background
+label[data-baseweb="radio"]:has(
+    input:checked
+)::after {
+    content: "✓";
+
+    position: absolute;
+    top: 50%;
+    right: 12px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+
+    background-color: #6847f5;
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 850;
+
+    transform: translateY(-50%);
+}
+
+
+/* ========================================
+   Solid Color 선택
+======================================== */
+
+.st-key-photo_editor_solid_color_name {
+    margin-top: 12px;
+}
+
+.st-key-photo_editor_solid_color_name
+[data-testid="stRadio"]
+[role="radiogroup"] {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.st-key-photo_editor_solid_color_name
+label[data-baseweb="radio"] {
+    margin: 0 !important;
+
+    font-size: 12px;
+}
+
+.photo-editor-selected-color {
+    margin-top: 11px;
+
+    color: #6e6b7d;
+
+    font-size: 12px;
+}
+
+
+/* ========================================
+   Adjustments
+======================================== */
+
+.photo-editor-adjustment-space {
+    height: 30px;
+}
+
+
+/* Adjustments 영역 제목 */
+
+.photo-editor-adjustment-space
++ div h4 {
+    margin-bottom: 15px !important;
+}
+
+
+/* Slider 전체 간격 */
+
+[data-testid="stSlider"] {
+    margin-bottom: 3px;
+}
+
+
+/* Slider 라벨 */
+
+[data-testid="stSlider"] label p {
+    color: #49465d;
+
+    font-size: 13px;
+    font-weight: 650;
+}
+
+
+/* Slider 트랙 색상 */
+
+[data-testid="stSlider"]
+[data-baseweb="slider"]
+div[role="slider"] {
+    background-color: #6847f5 !important;
+}
+
+
+/* Streamlit 버전에 따른 보라색 강제 적용 */
+
+[data-testid="stSlider"]
+div[data-baseweb="slider"]
+> div
+> div {
+    color: #6847f5;
+}
+
+
+/* ========================================
+   Preview
+======================================== */
+
+.photo-editor-preview-title {
+    margin-top: 26px;
+    margin-bottom: 12px;
+
+    color: #292742;
+
+    font-size: 17px;
+    font-weight: 800;
+}
+
+
+/* ========================================
+   버튼
+======================================== */
+
+.photo-editor-button-space {
+    height: 27px;
+}
+
+.st-key-photo_editor_reset_button button {
+    min-height: 49px;
+
+    border: 1.5px solid #dcd8e5;
+    border-radius: 10px;
+
+    background-color: #ffffff;
+    color: #555267;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.st-key-photo_editor_apply_button button {
+    min-height: 49px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: linear-gradient(
+        90deg,
+        #7047ed,
+        #6847f5
+    );
+
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 750;
+
+    box-shadow: 0 7px 18px
+        rgba(104, 71, 245, 0.22);
+}
+
+.st-key-photo_editor_apply_button button:disabled {
+    background: #c7bcf3;
+
+    color: rgba(
+        255,
+        255,
+        255,
+        0.78
+    );
+
+    box-shadow: none;
+}
+
+
+/* ========================================
+   경고 메시지
+======================================== */
+
+[data-testid="stAlert"] {
+    border-radius: 11px;
+
+    font-size: 13px;
+}
+
+
+/* ========================================
+   모바일
+======================================== */
+
+@media (max-width: 700px) {
+    [data-testid="stMainBlockContainer"] {
+        padding-right: 18px;
+        padding-left: 18px;
+    }
+
+    .photo-editor-progress-line {
+        width: 10px;
+
+        margin: 0 2px;
+    }
+
+    .photo-editor-progress-dot {
+        width: 25px;
+        height: 25px;
+
+        font-size: 11px;
+    }
+
+    .photo-editor-title {
+        font-size: 23px;
+    }
+
+    .st-key-photo_editor_solid_color_name
+    [data-testid="stRadio"]
+    [role="radiogroup"] {
+        grid-template-columns: 1fr;
+    }
+}

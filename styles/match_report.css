@@ -1,0 +1,397 @@
+/* ========================================
+   IMAGE MATCH REPORT PAGE
+======================================== */
+
+
+/* ========================================
+   Back 버튼
+======================================== */
+
+.st-key-match_report_back button {
+    justify-content: flex-start;
+
+    min-height: 38px;
+    padding: 0;
+
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #25233b;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.st-key-match_report_back button:hover {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    color: #6847f5;
+
+    transform: none;
+}
+
+
+/* ========================================
+   제목
+======================================== */
+
+.match-report-header {
+    margin-top: 32px;
+    margin-bottom: 36px;
+
+    text-align: center;
+}
+
+.match-report-title {
+    margin-bottom: 10px;
+
+    color: #202039;
+
+    font-size: 31px;
+    font-weight: 820;
+    line-height: 1.3;
+    letter-spacing: -0.7px;
+}
+
+.match-report-description {
+    color: #68667a;
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   공통 카드 제목
+======================================== */
+
+.match-card-title {
+    margin-bottom: 20px;
+
+    color: #292742;
+
+    font-size: 17px;
+    font-weight: 800;
+}
+
+
+/* ========================================
+   Match Score / Persona Alignment
+======================================== */
+
+.match-report-main-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(210px, 0.82fr)
+        minmax(0, 1.5fr);
+    gap: 20px;
+
+    width: 100%;
+}
+
+.match-score-card,
+.match-alignment-card,
+.match-feedback-card,
+.match-color-card {
+    border: 1px solid rgba(
+        105,
+        85,
+        215,
+        0.10
+    );
+
+    border-radius: 18px;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #fbfaff
+    );
+
+    box-shadow: 0 8px 25px
+        rgba(70, 55, 140, 0.05);
+}
+
+.match-score-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 340px;
+    padding: 27px 23px;
+
+    text-align: center;
+}
+
+.match-score-card .match-card-title {
+    align-self: flex-start;
+
+    width: 100%;
+
+    text-align: left;
+}
+
+.match-score-number {
+    margin-top: 16px;
+
+    color: #6847f5;
+
+    font-size: 63px;
+    font-weight: 820;
+    line-height: 1;
+}
+
+.match-score-label {
+    margin-top: 22px;
+
+    color: #25a96f;
+
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.match-score-message {
+    margin-top: 9px;
+
+    color: #6e6b7d;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.match-alignment-card {
+    min-height: 340px;
+    padding: 27px 29px;
+}
+
+.match-alignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.match-alignment-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    color: #302d47;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.match-alignment-heading strong {
+    color: #4f4c61;
+
+    font-size: 13px;
+}
+
+.match-alignment-meta {
+    margin-top: 3px;
+
+    color: #9996a6;
+
+    font-size: 11px;
+}
+
+.match-alignment-track {
+    overflow: hidden;
+
+    width: 100%;
+    height: 8px;
+
+    margin-top: 7px;
+
+    border-radius: 999px;
+
+    background-color: #ebe9f1;
+}
+
+.match-alignment-fill {
+    height: 100%;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        90deg,
+        #5c4ee7,
+        #7748ef
+    );
+
+    transition: width 0.4s ease;
+}
+
+
+/* ========================================
+   Strengths / Areas to Improve
+======================================== */
+
+.match-feedback-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 20px;
+
+    width: 100%;
+
+    margin-top: 22px;
+}
+
+.match-feedback-card {
+    min-height: 245px;
+    padding: 27px 29px;
+}
+
+.match-feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.match-feedback-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+
+    color: #59566d;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.match-feedback-item span {
+    flex-shrink: 0;
+
+    font-size: 16px;
+    font-weight: 850;
+}
+
+.match-feedback-item.positive span {
+    color: #28a66f;
+}
+
+.match-feedback-item.negative span {
+    color: #d45461;
+}
+
+
+/* ========================================
+   Color Recommendation
+======================================== */
+
+.match-color-card {
+    margin-top: 22px;
+    padding: 27px 29px;
+}
+
+.match-color-description {
+    color: #6d6a7c;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.match-color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+
+    margin-top: 19px;
+}
+
+.match-color-swatch {
+    width: 54px;
+    height: 54px;
+
+    border: 1px solid rgba(
+        55,
+        50,
+        80,
+        0.12
+    );
+
+    border-radius: 11px;
+
+    box-shadow: 0 4px 12px
+        rgba(50, 45, 80, 0.07);
+}
+
+
+/* ========================================
+   안내 문구
+======================================== */
+
+.match-report-notice {
+    margin-top: 22px;
+    padding: 17px 20px;
+
+    border-radius: 14px;
+
+    background-color: rgba(
+        120,
+        120,
+        120,
+        0.07
+    );
+
+    color: #706d7e;
+
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+
+/* ========================================
+   Continue 버튼
+======================================== */
+
+.match-report-button-space {
+    height: 28px;
+}
+
+.st-key-match_report_continue_button button {
+    min-height: 54px;
+
+    border-radius: 11px;
+
+    font-size: 16px;
+    font-weight: 750;
+}
+
+
+/* ========================================
+   모바일
+======================================== */
+
+@media (max-width: 700px) {
+    .match-report-title {
+        font-size: 25px;
+    }
+
+    .match-report-main-grid,
+    .match-feedback-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .match-score-card {
+        min-height: 260px;
+    }
+
+    .match-alignment-card {
+        min-height: auto;
+    }
+
+    .match-feedback-card {
+        min-height: auto;
+    }
+
+    .match-color-swatch {
+        width: 46px;
+        height: 46px;
+    }
+}

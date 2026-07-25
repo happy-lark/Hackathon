@@ -1,13 +1,99 @@
+"""
+analysis/background_editor.py
+
+MediaPipe Tasks ImageSegmenter를 사용해
+사진 속 인물은 유지하고 배경만 변경합니다.
+
+지원 배경:
+- Blur
+- Solid Color
+- Office
+- Urban
+- Nature
+"""
+
 from pathlib import Path
 
 import cv2
 import mediapipe as mp
 import numpy as np
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 from PIL import (
     Image,
     ImageDraw,
-    ImageFilter
+    ImageFilter,
+    ImageOps
 )
+
+
+# ========================================
+# 프로젝트 경로
+# ========================================
+
+PROJECT_ROOT = (
+    Path(__file__)
+    .resolve()
+    .parent
+    .parent
+)
+
+MODEL_PATH = (
+    PROJECT_ROOT
+    / "assets"
+    / "models"
+    / "selfie_multiclass.tflite"
+)
+
+
+# 실제 파일이 존재하는 첫 번째 경로를 사용합니다.
+BACKGROUND_FILE_CANDIDATES = {
+    "office": [
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "office.jpg",
+
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "office.png"
+    ],
+
+    "urban": [
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "urban.jpg",
+
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "city.jpg",
+
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "urban.png"
+    ],
+
+    "nature": [
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "nature.jpg",
+
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "forest.jpg",
+
+        PROJECT_ROOT
+        / "assets"
+        / "backgrounds"
+        / "ocean.jpg"
+    ]
+}
 
 
 PERSONAL_COLOR_BACKGROUNDS = {
@@ -30,36 +116,36 @@ PERSONAL_COLOR_BACKGROUNDS = {
 }
 
 
-NATURE_BACKGROUND_FILES = {
-    "Spring Warm": (
-        "assets/backgrounds/spring_nature.jpg"
-    ),
-    "Summer Cool": (
-        "assets/backgrounds/summer_nature.jpg"
-    ),
-    "Autumn Warm": (
-        "assets/backgrounds/autumn_nature.jpg"
-    ),
-    "Winter Cool": (
-        "assets/backgrounds/winter_nature.jpg"
-    )
-}
-
+# ========================================
+# 퍼스널 컬러 결과 처리
+# ========================================
 
 def extract_personal_color_name(
     color_analysis_result
 ):
     """
-    퍼스널컬러 분석 결과에서 시즌 이름을 가져옵니다.
-
-    프로젝트마다 결과 딕셔너리의 key가 달라도
-    어느 정도 대응할 수 있도록 여러 key를 확인합니다.
+    다양한 결과 구조에서 퍼스널 컬러 시즌명을 찾습니다.
     """
+
     if isinstance(
         color_analysis_result,
         str
     ):
         return color_analysis_result
+
+    if isinstance(
+        color_analysis_result,
+        list
+    ):
+        for item in color_analysis_result:
+            result = extract_personal_color_name(
+                item
+            )
+
+            if result:
+                return result
+
+        return None
 
     if not isinstance(
         color_analysis_result,
@@ -74,7 +160,8 @@ def extract_personal_color_name(
         "result",
         "final_result",
         "final_season",
-        "dominant_season"
+        "dominant_season",
+        "tone"
     ]
 
     for key in possible_keys:
@@ -82,19 +169,30 @@ def extract_personal_color_name(
             key
         )
 
-        if isinstance(value, str):
+        if isinstance(
+            value,
+            str
+        ):
             return value
 
-    for value in color_analysis_result.values():
-        if isinstance(value, dict):
-            nested_result = (
-                extract_personal_color_name(
-                    value
-                )
+        nested_result = (
+            extract_personal_color_name(
+                value
             )
+        )
 
-            if nested_result:
-                return nested_result
+        if nested_result:
+            return nested_result
+
+    for value in color_analysis_result.values():
+        nested_result = (
+            extract_personal_color_name(
+                value
+            )
+        )
+
+        if nested_result:
+            return nested_result
 
     return None
 
@@ -103,14 +201,14 @@ def normalize_personal_color_name(
     personal_color_name
 ):
     """
-    분석 결과 문자열을 프로젝트에서 사용하는
-    시즌 명칭으로 정규화합니다.
+    퍼스널 컬러 이름을 프로젝트의 시즌 이름으로 변환합니다.
     """
+
     if not personal_color_name:
         return None
 
     normalized_name = (
-        personal_color_name
+        str(personal_color_name)
         .strip()
         .lower()
     )
@@ -142,118 +240,401 @@ def normalize_personal_color_name(
     }
 
     return aliases.get(
-        normalized_name,
-        personal_color_name
+        normalized_name
     )
 
 
-def create_person_mask(image):
+# ========================================
+# MediaPipe 인물 분할
+# ========================================
+
+def create_person_mask(
+    image
+):
     """
-    MediaPipe Selfie Segmentation으로
-    인물 영역 마스크를 생성합니다.
+    MediaPipe Selfie Multiclass 모델을 사용해
+    인물 전체 영역의 마스크를 생성합니다.
+
+    모델 카테고리:
+    0 = 배경
+    1 = 머리카락
+    2 = 신체 피부
+    3 = 얼굴 피부
+    4 = 옷
+    5 = 액세서리 및 기타
     """
-    image_array = np.array(
-        image.convert("RGB")
+
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            "MediaPipe segmentation model을 "
+            "찾을 수 없습니다: "
+            f"{MODEL_PATH}"
+        )
+
+    original_image = (
+        ImageOps.exif_transpose(
+            image
+        )
+        .convert("RGB")
     )
 
-    selfie_segmentation = (
-        mp.solutions.selfie_segmentation
+    image_array = np.asarray(
+        original_image,
+        dtype=np.uint8
     )
 
-    with selfie_segmentation.SelfieSegmentation(
-        model_selection=1
+    image_array = np.ascontiguousarray(
+        image_array
+    )
+
+    mp_image = mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data=image_array
+    )
+
+    base_options = python.BaseOptions(
+        model_asset_path=str(
+            MODEL_PATH
+        )
+    )
+
+    options = vision.ImageSegmenterOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.IMAGE,
+        output_category_mask=True,
+        output_confidence_masks=False
+    )
+
+    with vision.ImageSegmenter.create_from_options(
+        options
     ) as segmenter:
-        result = segmenter.process(
-            image_array
+        segmentation_result = (
+            segmenter.segment(
+                mp_image
+            )
         )
 
-    if result.segmentation_mask is None:
-        raise ValueError(
-            "사진에서 사람 영역을 분리하지 못했습니다."
-        )
-
-    mask = result.segmentation_mask
-
-    mask = np.clip(
-        (mask - 0.1) / 0.8,
-        0,
-        1
+    category_mask = (
+        segmentation_result.category_mask
     )
 
-    mask = cv2.GaussianBlur(
-        mask,
-        (21, 21),
+    if category_mask is None:
+        raise ValueError(
+            "사진에서 인물 분할 마스크를 "
+            "생성하지 못했습니다."
+        )
+
+    category_array = (
+        category_mask
+        .numpy_view()
+        .copy()
+    )
+
+    image_width, image_height = (
+        original_image.size
+    )
+
+    if category_array.shape != (
+        image_height,
+        image_width
+    ):
+        category_array = cv2.resize(
+            category_array,
+            (
+                image_width,
+                image_height
+            ),
+            interpolation=cv2.INTER_NEAREST
+        )
+
+    # 0은 배경이며, 1 이상은 인물 구성 요소입니다.
+    person_mask = (
+        category_array > 0
+    ).astype(
+        np.float32
+    )
+
+    # 인물 내부의 작은 빈 공간을 채웁니다.
+    close_kernel = np.ones(
+        (7, 7),
+        dtype=np.uint8
+    )
+
+    person_mask = cv2.morphologyEx(
+        person_mask,
+        cv2.MORPH_CLOSE,
+        close_kernel
+    )
+
+    # 머리카락, 옷 가장자리 손실을 줄입니다.
+    dilate_kernel = np.ones(
+        (3, 3),
+        dtype=np.uint8
+    )
+
+    person_mask = cv2.dilate(
+        person_mask,
+        dilate_kernel,
+        iterations=1
+    )
+
+    # 합성 경계를 부드럽게 만듭니다.
+    person_mask = cv2.GaussianBlur(
+        person_mask,
+        (9, 9),
         0
     )
 
-    return mask
+    return np.clip(
+        person_mask,
+        0.0,
+        1.0
+    )
+
+
+# ========================================
+# 배경 크기 조절
+# ========================================
+
+def fit_background_to_image(
+    background_image,
+    target_size
+):
+    """
+    배경 비율을 유지하면서 원본 사진 전체를
+    덮도록 확대하고 중앙을 자릅니다.
+    """
+
+    target_width, target_height = (
+        target_size
+    )
+
+    background_image = (
+        ImageOps.exif_transpose(
+            background_image
+        )
+        .convert("RGB")
+    )
+
+    background_width, background_height = (
+        background_image.size
+    )
+
+    if (
+        background_width <= 0
+        or background_height <= 0
+    ):
+        raise ValueError(
+            "배경 이미지의 크기가 올바르지 않습니다."
+        )
+
+    width_scale = (
+        target_width
+        / background_width
+    )
+
+    height_scale = (
+        target_height
+        / background_height
+    )
+
+    scale = max(
+        width_scale,
+        height_scale
+    )
+
+    resized_width = max(
+        1,
+        round(
+            background_width
+            * scale
+        )
+    )
+
+    resized_height = max(
+        1,
+        round(
+            background_height
+            * scale
+        )
+    )
+
+    resized_background = (
+        background_image.resize(
+            (
+                resized_width,
+                resized_height
+            ),
+            Image.Resampling.LANCZOS
+        )
+    )
+
+    left = max(
+        0,
+        (
+            resized_width
+            - target_width
+        ) // 2
+    )
+
+    top = max(
+        0,
+        (
+            resized_height
+            - target_height
+        ) // 2
+    )
+
+    return resized_background.crop(
+        (
+            left,
+            top,
+            left + target_width,
+            top + target_height
+        )
+    )
+
+
+# ========================================
+# 배경 생성
+# ========================================
+
+def parse_hex_color(
+    hex_color,
+    fallback=(217, 220, 227)
+):
+    """
+    #RRGGBB 문자열을 RGB 튜플로 변환합니다.
+    """
+
+    if not isinstance(
+        hex_color,
+        str
+    ):
+        return fallback
+
+    cleaned_color = (
+        hex_color.strip()
+        .lstrip("#")
+    )
+
+    if len(cleaned_color) != 6:
+        return fallback
+
+    try:
+        return tuple(
+            int(
+                cleaned_color[index:index + 2],
+                16
+            )
+            for index in (
+                0,
+                2,
+                4
+            )
+        )
+
+    except ValueError:
+        return fallback
 
 
 def create_solid_background(
     size,
-    personal_color_name
+    color=None,
+    personal_color_name=None
 ):
     """
-    퍼스널컬러에 맞는 단색 배경을 생성합니다.
+    지정된 색상 또는 퍼스널 컬러 추천색으로
+    단색 배경을 생성합니다.
     """
-    background_info = (
-        PERSONAL_COLOR_BACKGROUNDS.get(
-            personal_color_name,
-            {
-                "color": (239, 235, 225),
-                "name": "Neutral Ivory"
-            }
+
+    if color:
+        rgb_color = parse_hex_color(
+            color
+        )
+
+        color_name = str(
+            color
+        )
+
+    else:
+        background_info = (
+            PERSONAL_COLOR_BACKGROUNDS.get(
+                personal_color_name,
+                {
+                    "color": (239, 235, 225),
+                    "name": "Neutral Ivory"
+                }
+            )
+        )
+
+        rgb_color = background_info[
+            "color"
+        ]
+
+        color_name = background_info[
+            "name"
+        ]
+
+    return (
+        Image.new(
+            "RGB",
+            size,
+            rgb_color
+        ),
+        color_name
+    )
+
+
+def create_blurred_original_background(
+    original_image,
+    blur_radius=14
+):
+    """
+    원본 배경 전체를 흐리게 만든 배경 이미지를 생성합니다.
+
+    인물은 합성 단계에서 원본 상태로 다시 올라갑니다.
+    """
+
+    return original_image.filter(
+        ImageFilter.GaussianBlur(
+            radius=blur_radius
         )
     )
 
-    background = Image.new(
-        "RGB",
-        size,
-        background_info["color"]
-    )
 
-    return (
-        background,
-        background_info["name"]
-    )
-
-
-def create_generated_nature_background(
+def create_generated_background(
     size,
-    personal_color_name
+    background_name
 ):
     """
-    자연환경 이미지 파일이 없을 경우 사용할
-    자연풍 배경을 생성합니다.
+    실제 배경 파일이 없을 때 사용할
+    간단한 자동 생성 배경입니다.
     """
+
     width, height = size
 
-    palette_by_season = {
-        "Spring Warm": {
-            "sky": (244, 205, 157),
-            "ground": (132, 167, 105),
-            "accent": (238, 175, 125)
+    palettes = {
+        "office": {
+            "top": (235, 237, 241),
+            "bottom": (201, 207, 218),
+            "accent": (175, 181, 192)
         },
-        "Summer Cool": {
-            "sky": (200, 217, 232),
-            "ground": (125, 160, 151),
-            "accent": (177, 167, 206)
+        "urban": {
+            "top": (190, 205, 219),
+            "bottom": (111, 124, 140),
+            "accent": (75, 87, 103)
         },
-        "Autumn Warm": {
-            "sky": (219, 181, 134),
-            "ground": (122, 119, 71),
-            "accent": (175, 107, 69)
-        },
-        "Winter Cool": {
-            "sky": (195, 221, 237),
-            "ground": (91, 126, 120),
-            "accent": (225, 235, 241)
+        "nature": {
+            "top": (198, 219, 224),
+            "bottom": (104, 145, 117),
+            "accent": (76, 118, 84)
         }
     }
 
-    palette = palette_by_season.get(
-        personal_color_name,
-        palette_by_season["Spring Warm"]
+    palette = palettes.get(
+        background_name,
+        palettes["office"]
     )
 
     background = Image.new(
@@ -263,41 +644,24 @@ def create_generated_nature_background(
 
     pixels = background.load()
 
-    horizon = int(
-        height * 0.58
-    )
-
     for y in range(height):
-        if y < horizon:
-            ratio = y / max(
-                horizon,
+        ratio = (
+            y
+            / max(
+                height - 1,
                 1
             )
+        )
 
-            color = tuple(
-                int(
-                    palette["sky"][channel]
-                    * (1 - ratio * 0.15)
-                )
-                for channel in range(3)
+        color = tuple(
+            int(
+                palette["top"][channel]
+                * (1 - ratio)
+                + palette["bottom"][channel]
+                * ratio
             )
-
-        else:
-            ratio = (
-                (y - horizon)
-                / max(
-                    height - horizon,
-                    1
-                )
-            )
-
-            color = tuple(
-                int(
-                    palette["ground"][channel]
-                    * (1 - ratio * 0.25)
-                )
-                for channel in range(3)
-            )
+            for channel in range(3)
+        )
 
         for x in range(width):
             pixels[x, y] = color
@@ -307,113 +671,181 @@ def create_generated_nature_background(
         "RGBA"
     )
 
-    mountain_points = [
-        (0, horizon),
-        (
-            int(width * 0.25),
-            int(height * 0.32)
-        ),
-        (
-            int(width * 0.50),
-            horizon
-        ),
-        (
-            int(width * 0.72),
-            int(height * 0.38)
-        ),
-        (width, horizon)
-    ]
-
-    draw.polygon(
-        mountain_points,
-        fill=(
-            palette["accent"][0],
-            palette["accent"][1],
-            palette["accent"][2],
-            150
+    if background_name == "office":
+        # 흐릿한 창문과 벽 패널
+        panel_width = max(
+            40,
+            int(width * 0.22)
         )
-    )
 
-    for center_x in [
-        int(width * 0.08),
-        int(width * 0.20),
-        int(width * 0.82),
-        int(width * 0.94)
-    ]:
-        draw.ellipse(
-            (
-                center_x - int(width * 0.12),
-                int(height * 0.40),
-                center_x + int(width * 0.12),
-                int(height * 0.80)
-            ),
+        for index in range(4):
+            left = int(
+                width * 0.05
+            ) + index * int(
+                width * 0.24
+            )
+
+            draw.rounded_rectangle(
+                (
+                    left,
+                    int(height * 0.12),
+                    left + panel_width,
+                    int(height * 0.72)
+                ),
+                radius=12,
+                fill=(255, 255, 255, 80)
+            )
+
+    elif background_name == "urban":
+        # 도시 건물 실루엣
+        building_width = max(
+            24,
+            int(width * 0.12)
+        )
+
+        for index in range(8):
+            left = index * int(
+                width / 8
+            )
+
+            building_height = int(
+                height
+                * (
+                    0.25
+                    + 0.08
+                    * (
+                        index % 4
+                    )
+                )
+            )
+
+            draw.rectangle(
+                (
+                    left,
+                    height - building_height,
+                    left + building_width,
+                    height
+                ),
+                fill=(
+                    palette["accent"][0],
+                    palette["accent"][1],
+                    palette["accent"][2],
+                    150
+                )
+            )
+
+    else:
+        # 자연 배경 산과 수풀
+        horizon = int(
+            height * 0.58
+        )
+
+        draw.polygon(
+            [
+                (0, horizon),
+                (
+                    int(width * 0.28),
+                    int(height * 0.30)
+                ),
+                (
+                    int(width * 0.52),
+                    horizon
+                ),
+                (
+                    int(width * 0.75),
+                    int(height * 0.36)
+                ),
+                (width, horizon)
+            ],
             fill=(
-                palette["ground"][0],
-                palette["ground"][1],
-                palette["ground"][2],
-                190
+                palette["accent"][0],
+                palette["accent"][1],
+                palette["accent"][2],
+                155
             )
         )
 
-    background = background.filter(
+    return background.filter(
         ImageFilter.GaussianBlur(
             radius=max(
-                6,
-                int(width * 0.012)
+                5,
+                int(width * 0.01)
             )
         )
     )
 
-    return background
 
-
-def create_nature_background(
-    size,
-    personal_color_name
+def find_existing_background_path(
+    background_name
 ):
     """
-    시즌별 자연환경 배경 이미지를 불러옵니다.
-
-    이미지 파일이 없으면 자동 생성한 자연풍 배경을 사용합니다.
+    지정된 배경 종류에서 실제 존재하는 첫 파일을 찾습니다.
     """
-    background_path = (
-        NATURE_BACKGROUND_FILES.get(
-            personal_color_name
+
+    candidate_paths = (
+        BACKGROUND_FILE_CANDIDATES.get(
+            background_name,
+            []
         )
     )
 
-    if (
-        background_path
-        and Path(background_path).exists()
-    ):
-        background = Image.open(
-            background_path
-        ).convert("RGB")
+    for path in candidate_paths:
+        if path.exists():
+            return path
 
-        background = background.resize(
-            size,
-            Image.Resampling.LANCZOS
+    return None
+
+
+def create_preset_background(
+    size,
+    background_name
+):
+    """
+    Office, Urban, Nature 배경을 불러오거나
+    파일이 없으면 자동으로 생성합니다.
+    """
+
+    background_path = (
+        find_existing_background_path(
+            background_name
+        )
+    )
+
+    if background_path:
+        background_image = Image.open(
+            background_path
+        )
+
+        background_image = (
+            fit_background_to_image(
+                background_image=background_image,
+                target_size=size
+            )
         )
 
         return (
-            background,
-            Path(background_path).name,
+            background_image,
+            background_path.name,
             False
         )
 
     generated_background = (
-        create_generated_nature_background(
-            size,
-            personal_color_name
+        create_generated_background(
+            size=size,
+            background_name=background_name
         )
     )
 
     return (
         generated_background,
-        "Generated nature background",
+        f"Generated {background_name} background",
         True
     )
 
+
+# ========================================
+# 합성
+# ========================================
 
 def composite_person_and_background(
     person_image,
@@ -421,19 +853,49 @@ def composite_person_and_background(
     mask
 ):
     """
-    인물 이미지와 새 배경을 합성합니다.
+    인물은 원본에서 유지하고 배경 영역만 교체합니다.
     """
-    person_array = np.array(
-        person_image.convert("RGB")
-    ).astype(
-        np.float32
+
+    person_image = (
+        ImageOps.exif_transpose(
+            person_image
+        )
+        .convert("RGB")
     )
 
-    background_array = np.array(
-        background_image.convert("RGB")
-    ).astype(
-        np.float32
+    background_image = (
+        fit_background_to_image(
+            background_image,
+            person_image.size
+        )
     )
+
+    person_array = np.asarray(
+        person_image,
+        dtype=np.float32
+    )
+
+    background_array = np.asarray(
+        background_image,
+        dtype=np.float32
+    )
+
+    image_width, image_height = (
+        person_image.size
+    )
+
+    if mask.shape != (
+        image_height,
+        image_width
+    ):
+        mask = cv2.resize(
+            mask,
+            (
+                image_width,
+                image_height
+            ),
+            interpolation=cv2.INTER_LINEAR
+        )
 
     mask_3_channels = np.repeat(
         mask[:, :, np.newaxis],
@@ -444,9 +906,12 @@ def composite_person_and_background(
     )
 
     composite_array = (
-        person_array * mask_3_channels
-        + background_array * (
-            1 - mask_3_channels
+        person_array
+        * mask_3_channels
+        + background_array
+        * (
+            1.0
+            - mask_3_channels
         )
     )
 
@@ -463,14 +928,154 @@ def composite_person_and_background(
     )
 
 
+# ========================================
+# background_type 해석
+# ========================================
+
+def normalize_background_type(
+    background_type
+):
+    """
+    photo_editor.py에서 전달한 배경 설정을
+    공통 형식으로 변환합니다.
+
+    허용 예:
+    "blur"
+    "office"
+    "urban"
+    "nature"
+    {"type": "solid", "color": "#BFD7F4"}
+    """
+
+    if isinstance(
+        background_type,
+        dict
+    ):
+        raw_type = background_type.get(
+            "type",
+            "solid"
+        )
+
+        normalized_type = (
+            str(raw_type)
+            .strip()
+            .lower()
+        )
+
+        return {
+            "type": normalized_type,
+            "color": background_type.get(
+                "color"
+            ),
+            "blur_radius": background_type.get(
+                "blur_radius",
+                14
+            )
+        }
+
+    if not isinstance(
+        background_type,
+        str
+    ):
+        raise ValueError(
+            "지원하지 않는 background_type입니다."
+        )
+
+    normalized_value = (
+        background_type
+        .strip()
+        .lower()
+    )
+
+    aliases = {
+        "blur": "blur",
+        "블러": "blur",
+
+        "solid": "solid",
+        "solid color": "solid",
+        "퍼스널컬러 추천 단색": "solid",
+
+        "office": "office",
+        "사무실": "office",
+
+        "urban": "urban",
+        "city": "urban",
+        "도시": "urban",
+
+        "nature": "nature",
+        "forest": "nature",
+        "자연": "nature",
+        "자연환경": "nature"
+    }
+
+    normalized_type = aliases.get(
+        normalized_value
+    )
+
+    if normalized_type is None:
+        raise ValueError(
+            "지원하지 않는 배경 유형입니다: "
+            f"{background_type}"
+        )
+
+    return {
+        "type": normalized_type,
+        "color": None,
+        "blur_radius": 14
+    }
+
+
+# ========================================
+# 공개 함수
+# ========================================
+
 def change_background(
     image,
     background_type,
-    color_analysis_result
+    color_analysis_result=None
 ):
     """
-    사람은 유지하고 배경만 변경합니다.
+    사진 속 인물은 유지하고 배경만 변경합니다.
+
+    Parameters
+    ----------
+    image:
+        PIL.Image.Image
+
+    background_type:
+        "blur", "office", "urban", "nature"
+        또는
+        {"type": "solid", "color": "#RRGGBB"}
+
+    color_analysis_result:
+        Personal Color 분석 결과
     """
+
+    if not isinstance(
+        image,
+        Image.Image
+    ):
+        raise TypeError(
+            "image는 PIL.Image.Image 형식이어야 합니다."
+        )
+
+    original_image = (
+        ImageOps.exif_transpose(
+            image
+        )
+        .convert("RGB")
+    )
+
+    background_settings = (
+        normalize_background_type(
+            background_type
+        )
+    )
+
+    selected_type = (
+        background_settings["type"]
+    )
+
     personal_color_name = (
         extract_personal_color_name(
             color_analysis_result
@@ -483,62 +1088,110 @@ def change_background(
         )
     )
 
-    if not personal_color_name:
-        personal_color_name = (
-            "Spring Warm"
-        )
-
-    original_image = image.convert(
-        "RGB"
-    )
-
     mask = create_person_mask(
         original_image
     )
 
-    if (
-        background_type
-        == "퍼스널컬러 추천 단색"
-    ):
-        background_image, color_name = (
-            create_solid_background(
-                original_image.size,
-                personal_color_name
+    if selected_type == "blur":
+        blur_radius = background_settings.get(
+            "blur_radius",
+            14
+        )
+
+        try:
+            blur_radius = float(
+                blur_radius
+            )
+
+        except (TypeError, ValueError):
+            blur_radius = 14
+
+        background_image = (
+            create_blurred_original_background(
+                original_image=original_image,
+                blur_radius=blur_radius
             )
         )
 
         description = (
-            f"{personal_color_name} 진단 결과에 어울리는 "
-            f"{color_name} 계열의 단색으로 배경을 변경했습니다. "
-            "사진 속 인물 영역은 유지하고 배경 영역만 교체했습니다."
+            "사진 속 인물은 선명하게 유지하고 "
+            f"기존 배경에 블러 강도 {blur_radius:g}를 "
+            "적용했습니다."
         )
 
-    else:
+    elif selected_type == "solid":
+        selected_color = (
+            background_settings.get(
+                "color"
+            )
+        )
+
         (
             background_image,
-            background_name,
-            generated
-        ) = create_nature_background(
-            original_image.size,
-            personal_color_name
+            color_name
+        ) = create_solid_background(
+            size=original_image.size,
+            color=selected_color,
+            personal_color_name=personal_color_name
         )
 
-        if generated:
-            background_source_description = (
-                "시즌 색조를 반영한 자연풍 배경을 "
-                "자동 생성해 사용했습니다."
+        if selected_color:
+            description = (
+                "사진 속 인물은 유지하고 배경만 "
+                f"{color_name} 단색으로 변경했습니다."
             )
 
         else:
-            background_source_description = (
-                f"{background_name} 이미지를 사용했습니다."
+            resolved_season = (
+                personal_color_name
+                or "Neutral"
+            )
+
+            description = (
+                f"{resolved_season} 퍼스널 컬러에 어울리는 "
+                f"{color_name} 계열의 단색으로 "
+                "배경을 변경했습니다."
+            )
+
+    elif selected_type in {
+        "office",
+        "urban",
+        "nature"
+    }:
+        (
+            background_image,
+            background_source,
+            generated
+        ) = create_preset_background(
+            size=original_image.size,
+            background_name=selected_type
+        )
+
+        display_name = (
+            selected_type.capitalize()
+        )
+
+        if generated:
+            source_description = (
+                "실제 배경 파일이 없어 자동 생성된 "
+                f"{display_name} 배경을 사용했습니다."
+            )
+
+        else:
+            source_description = (
+                f"{background_source} 파일을 사용했습니다."
             )
 
         description = (
-            f"{personal_color_name}의 색감과 조화를 이루도록 "
-            "자연환경 배경으로 변경했습니다. "
-            "사진 속 인물은 유지하고 배경 영역만 교체했습니다. "
-            f"{background_source_description}"
+            "사진 속 인물은 유지하고 기존 배경만 "
+            f"{display_name} 배경으로 변경했습니다. "
+            f"{source_description}"
+        )
+
+    else:
+        raise ValueError(
+            "지원하지 않는 배경 유형입니다: "
+            f"{selected_type}"
         )
 
     changed_image = (
@@ -552,87 +1205,8 @@ def change_background(
     return {
         "image": changed_image,
         "description": description,
-        "personal_color": personal_color_name
+        "personal_color": personal_color_name,
+        "background_type": selected_type,
+        "person_mask": mask,
+        "background_image": background_image
     }
-
-
-def _get_mask_and_arrays(image):
-    """공용: 인물 마스크 + 배열 준비"""
-    original_image = image.convert("RGB")
-    mask = create_person_mask(original_image)  # 이미 이 파일에 있는 함수 재사용
-    original_array = np.array(original_image, dtype=np.float32)
-    mask_3d = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
-    return original_image, original_array, mask_3d
- 
- 
-def blur_background(image, blur_radius=15):
-    """배경만 블러 처리하고 인물은 선명하게 유지"""
-    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
- 
-    blurred = original_image.filter(ImageFilter.GaussianBlur(radius=blur_radius))
-    blurred_array = np.array(blurred, dtype=np.float32)
- 
-    result_array = original_array * mask_3d + blurred_array * (1 - mask_3d)
-    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
-    return Image.fromarray(result_array)
- 
- 
-def apply_solid_color_background(image, hex_color):
-    """배경을 지정한 단색으로 교체"""
-    hex_color = hex_color.lstrip("#")
-    rgb = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
- 
-    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
-    background_array = np.full(original_array.shape, rgb, dtype=np.float32)
- 
-    result_array = original_array * mask_3d + background_array * (1 - mask_3d)
-    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
-    return Image.fromarray(result_array)
- 
- 
-def _generate_office_background(size):
-    """사진 파일 없이 코드로 만드는 간단한 오피스 느낌 배경"""
-    width, height = size
-    bg = Image.new("RGB", size, (223, 226, 231))
-    draw = ImageDraw.Draw(bg)
-    # 창문/파티션 느낌의 세로 라인
-    for x in range(0, width, max(40, width // 8)):
-        draw.line([(x, 0), (x, height)], fill=(200, 204, 210), width=2)
-    draw.rectangle([0, int(height * 0.75), width, height], fill=(210, 213, 218))
-    return bg.filter(ImageFilter.GaussianBlur(radius=8))
- 
- 
-def _generate_urban_background(size):
-    """사진 파일 없이 코드로 만드는 간단한 도시 느낌 배경"""
-    width, height = size
-    bg = Image.new("RGB", size, (176, 184, 196))
-    draw = ImageDraw.Draw(bg)
-    horizon = int(height * 0.62)
-    draw.rectangle([0, horizon, width, height], fill=(150, 156, 165))
-    # 건물 실루엣
-    import random
-    random.seed(42)
-    x = 0
-    while x < width:
-        w = random.randint(width // 10, width // 6)
-        h = random.randint(int(height * 0.25), int(height * 0.5))
-        draw.rectangle([x, horizon - h, x + w, horizon], fill=(130, 138, 150))
-        x += w + random.randint(5, 15)
-    return bg.filter(ImageFilter.GaussianBlur(radius=6))
- 
- 
-def apply_generated_background(image, background_type):
-    """Office / Urban 같은 생성 배경을 합성"""
-    original_image, original_array, mask_3d = _get_mask_and_arrays(image)
- 
-    if background_type == "Office":
-        bg = _generate_office_background(original_image.size)
-    elif background_type == "Urban":
-        bg = _generate_urban_background(original_image.size)
-    else:
-        return original_image
- 
-    bg_array = np.array(bg, dtype=np.float32)
-    result_array = original_array * mask_3d + bg_array * (1 - mask_3d)
-    result_array = np.clip(result_array, 0, 255).astype(np.uint8)
-    return Image.fromarray(result_array)
