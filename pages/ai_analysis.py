@@ -33,10 +33,12 @@ PROJECT_ROOT = (
 )
 
 
+# 새 로딩 로봇 이미지
+# 프로젝트 폴더의 assets/loading_img_cutout.png를 사용합니다.
 MASCOT_PATH = (
     PROJECT_ROOT
     / "assets"
-    / "persona_mascot.png"
+    / "loading_img_cutout.png"
 )
 
 
@@ -175,6 +177,26 @@ def reset_analysis_state():
         )
 
 
+def get_image_mime_type(image_path):
+    """
+    이미지 확장자에 맞는 MIME type을 반환합니다.
+    """
+
+    suffix = image_path.suffix.lower()
+
+    mime_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp"
+    }
+
+    return mime_types.get(
+        suffix,
+        "image/png"
+    )
+
+
 def get_mascot_html():
     """
     마스코트 이미지를 HTML에서 사용할 수 있도록
@@ -194,11 +216,15 @@ def get_mascot_html():
         "utf-8"
     )
 
+    mime_type = get_image_mime_type(
+        MASCOT_PATH
+    )
+
     return f"""
     <img
         class="analysis-mascot-image"
-        src="data:image/png;base64,{encoded_image}"
-        alt="PersonaLab AI"
+        src="data:{mime_type};base64,{encoded_image}"
+        alt="PersonaLab analysis robot"
     >
     """
 

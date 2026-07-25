@@ -137,7 +137,8 @@
    이미지 Preview
 ======================================== */
 
-.stImage img {
+.stImage img,
+[data-testid="stImage"] img {
     width: 100%;
 
     border-radius: 15px;
@@ -325,21 +326,30 @@ label[data-baseweb="radio"] p {
 }
 
 
-/* 색상 버튼 기본 형태 */
+/* ========================================
+   Match Report 추천 팔레트 버튼
+======================================== */
 
-.st-key-photo_editor_color_soft_gray button,
-.st-key-photo_editor_color_light_blue button,
-.st-key-photo_editor_color_warm_beige button,
-.st-key-photo_editor_color_soft_cream button,
-.st-key-photo_editor_color_muted_teal button {
+/*
+각 버튼의 실제 background 색상은
+photo_editor.py의 inject_palette_button_styles()에서
+Match Report 추천 팔레트로 동적 적용됩니다.
+*/
+
+.st-key-photo_editor_palette_0 button,
+.st-key-photo_editor_palette_1 button,
+.st-key-photo_editor_palette_2 button,
+.st-key-photo_editor_palette_3 button,
+.st-key-photo_editor_palette_4 button,
+.st-key-photo_editor_palette_5 button {
     display: flex;
     justify-content: center;
     align-items: center;
 
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
 
     margin: 0 auto;
     padding: 0;
@@ -351,6 +361,10 @@ label[data-baseweb="radio"] p {
 
     font-size: 14px;
     font-weight: 850;
+    line-height: 1;
+
+    text-shadow: 0 1px 3px
+        rgba(0, 0, 0, 0.32);
 
     box-shadow:
         0 0 0 1px #ded9e7,
@@ -358,35 +372,19 @@ label[data-baseweb="radio"] p {
 
     transition:
         transform 0.15s ease,
-        box-shadow 0.15s ease;
+        box-shadow 0.15s ease,
+        border-color 0.15s ease;
 }
 
-.st-key-photo_editor_color_soft_gray button {
-    background: #D9DCE3;
-}
-
-.st-key-photo_editor_color_light_blue button {
-    background: #BFD7F4;
-}
-
-.st-key-photo_editor_color_warm_beige button {
-    background: #D6A56F;
-}
-
-.st-key-photo_editor_color_soft_cream button {
-    background: #F1E2C7;
-}
-
-.st-key-photo_editor_color_muted_teal button {
-    background: #72AFC4;
-}
-
-.st-key-photo_editor_color_soft_gray button:hover,
-.st-key-photo_editor_color_light_blue button:hover,
-.st-key-photo_editor_color_warm_beige button:hover,
-.st-key-photo_editor_color_soft_cream button:hover,
-.st-key-photo_editor_color_muted_teal button:hover {
+.st-key-photo_editor_palette_0 button:hover,
+.st-key-photo_editor_palette_1 button:hover,
+.st-key-photo_editor_palette_2 button:hover,
+.st-key-photo_editor_palette_3 button:hover,
+.st-key-photo_editor_palette_4 button:hover,
+.st-key-photo_editor_palette_5 button:hover {
     border: 3px solid #ffffff;
+
+    color: #ffffff;
 
     transform: translateY(-2px) scale(1.05);
 
@@ -395,15 +393,50 @@ label[data-baseweb="radio"] p {
         0 6px 14px rgba(80, 60, 180, 0.15);
 }
 
+.st-key-photo_editor_palette_0 button:focus,
+.st-key-photo_editor_palette_1 button:focus,
+.st-key-photo_editor_palette_2 button:focus,
+.st-key-photo_editor_palette_3 button:focus,
+.st-key-photo_editor_palette_4 button:focus,
+.st-key-photo_editor_palette_5 button:focus {
+    border: 3px solid #ffffff;
 
-/* 색 이름 */
+    color: #ffffff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(112, 71, 237, 0.30);
+}
+
+
+/* 버튼 내부 Streamlit 문단 */
+
+.st-key-photo_editor_palette_0 button p,
+.st-key-photo_editor_palette_1 button p,
+.st-key-photo_editor_palette_2 button p,
+.st-key-photo_editor_palette_3 button p,
+.st-key-photo_editor_palette_4 button p,
+.st-key-photo_editor_palette_5 button p {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1;
+}
+
+
+/* ========================================
+   색상 코드와 선택 표시
+======================================== */
 
 .photo-editor-color-label {
     display: flex;
     flex-direction: column;
     align-items: center;
 
-    min-height: 37px;
+    min-height: 38px;
     margin-top: 7px;
 
     text-align: center;
@@ -412,13 +445,14 @@ label[data-baseweb="radio"] p {
 .photo-editor-color-label > span {
     color: #777386;
 
-    font-size: 9px;
+    font-size: 8px;
+    font-weight: 600;
     line-height: 1.25;
 }
 
 .recommended-badge {
     margin-top: 3px;
-    padding: 2px 4px;
+    padding: 2px 5px;
 
     border-radius: 999px;
 
@@ -466,8 +500,7 @@ div[role="slider"] {
         #6847f5
     ) !important;
 
-    box-shadow:
-        0 3px 8px
+    box-shadow: 0 3px 8px
         rgba(104, 71, 245, 0.25) !important;
 }
 
@@ -530,7 +563,7 @@ div[data-baseweb="slider"]
 }
 
 
-/* 각 Photo Editor 슬라이더에 한정해 적용 */
+/* Photo Editor 슬라이더에 한정해 적용 */
 
 .st-key-photo_editor_brightness
 div[role="slider"],
@@ -687,19 +720,33 @@ div[role="slider"] {
         font-size: 23px;
     }
 
-    .photo-editor-color-label > span {
-        font-size: 8px;
+    .st-key-photo_editor_palette_0 button,
+    .st-key-photo_editor_palette_1 button,
+    .st-key-photo_editor_palette_2 button,
+    .st-key-photo_editor_palette_3 button,
+    .st-key-photo_editor_palette_4 button,
+    .st-key-photo_editor_palette_5 button {
+        width: 31px;
+        min-width: 31px;
+        height: 31px;
+        min-height: 31px;
+
+        border-width: 2px;
+
+        font-size: 12px;
     }
 
-    .st-key-photo_editor_color_soft_gray button,
-    .st-key-photo_editor_color_light_blue button,
-    .st-key-photo_editor_color_warm_beige button,
-    .st-key-photo_editor_color_soft_cream button,
-    .st-key-photo_editor_color_muted_teal button {
-        width: 30px;
-        min-width: 30px;
-        height: 30px;
-        min-height: 30px;
+    .st-key-photo_editor_palette_0 button p,
+    .st-key-photo_editor_palette_1 button p,
+    .st-key-photo_editor_palette_2 button p,
+    .st-key-photo_editor_palette_3 button p,
+    .st-key-photo_editor_palette_4 button p,
+    .st-key-photo_editor_palette_5 button p {
+        font-size: 12px;
+    }
+
+    .photo-editor-color-label > span {
+        font-size: 7px;
     }
 }
 
@@ -724,5 +771,27 @@ div[role="slider"] {
 
     .photo-editor-title {
         font-size: 21px;
+    }
+
+    .st-key-photo_editor_palette_0 button,
+    .st-key-photo_editor_palette_1 button,
+    .st-key-photo_editor_palette_2 button,
+    .st-key-photo_editor_palette_3 button,
+    .st-key-photo_editor_palette_4 button,
+    .st-key-photo_editor_palette_5 button {
+        width: 27px;
+        min-width: 27px;
+        height: 27px;
+        min-height: 27px;
+    }
+
+    .photo-editor-color-label > span {
+        font-size: 6px;
+    }
+
+    .recommended-badge {
+        padding: 2px 3px;
+
+        font-size: 6px !important;
     }
 }
