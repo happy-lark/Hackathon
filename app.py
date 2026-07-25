@@ -11,6 +11,7 @@ from pages.result import show_result_page
 from pages.context import show_context_page
 from pages.ai_analysis import show_ai_analysis_page
 from pages.match_report import show_match_report_page
+from pages.photo_editor import show_photo_editor_page
 from pages.photo_comparison import show_photo_comparison_page
 from pages.personal_color import show_personal_color_page
 from pages.image_edit_result import (
@@ -51,6 +52,7 @@ PAGE_ROUTES = {
     "photo_comparison": show_photo_comparison_page,
     "result": show_result_page,
     "match_report":show_match_report_page,
+    "photo_editor":show_photo_editor_page,
     #"personal_color": show_personal_color_page,
     "image_edit_result": show_image_edit_result_page,
     
