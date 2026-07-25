@@ -1,3 +1,4 @@
+
 /* ========================================
    SERVICE INTRODUCTION PAGE
 ======================================== */
@@ -17,6 +18,19 @@
 
     color: #202039;
 }
+
+
+/* 이미지 로고 */
+
+.intro-brand-image {
+    display: block;
+
+    width: auto;
+    height: 42px;
+
+    object-fit: contain;
+}
+
 
 .intro-brand-icon {
     display: inline-flex;
@@ -306,6 +320,10 @@
 ======================================== */
 
 @media (max-width: 700px) {
+    .intro-brand-image {
+        height: 36px;
+    }
+
     .intro-divider {
         margin-bottom: 30px;
     }
