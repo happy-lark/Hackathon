@@ -204,32 +204,29 @@
 }
 
 [data-testid="stFileUploaderDropzoneInstructions"] span {
+    display: none;
+}
+
+[data-testid="stFileUploaderDropzoneInstructions"] span:first-of-type {
+    display: block;
     font-size: 0;
 }
 
-[data-testid="stFileUploaderDropzoneInstructions"] span::before {
+[data-testid="stFileUploaderDropzoneInstructions"] span:first-of-type::before {
     content: "Drag & drop your photos here";
-
     display: block;
-
     color: #29263e;
-
     font-size: 16px;
     font-weight: 720;
     line-height: 1.5;
 }
 
-[data-testid="stFileUploaderDropzoneInstructions"] span::after {
+[data-testid="stFileUploaderDropzoneInstructions"] span:first-of-type::after {
     content: "or";
-
     display: block;
-
     margin-top: 12px;
-
     color: #777487;
-
     font-size: 14px;
-    font-weight: 500;
 }
 
 [data-testid="stFileUploaderDropzoneInstructions"] small {

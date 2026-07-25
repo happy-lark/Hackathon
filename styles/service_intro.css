@@ -59,7 +59,26 @@
     );
 }
 
+.intro-brand-image {
+    display: block;
+    width: 205px;
+    max-width: 100%;
+    height: 52px;
+}
 
+@media (max-width: 700px) {
+    .intro-brand-image {
+        width: 165px;
+        height: 44px;
+    }
+}
+
+@media (max-width: 480px) {
+    .intro-brand-image {
+        width: 140px;
+        height: 40px;
+    }
+}
 /* ========================================
    페이지 제목 및 설명
 ======================================== */

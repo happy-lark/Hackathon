@@ -1,17 +1,17 @@
 import streamlit as st
 
 from utils.navigation import go_to_page
-
+from utils.logo import get_logo_html
 
 def show_service_intro_page():
     # =========================
     # 상단 브랜드
     # =========================
     st.markdown(
-        '<div class="intro-brand">'
-        '<span class="intro-brand-icon">P</span>'
-        '<span class="intro-brand-name">PersonaLab</span>'
-        '</div>',
+        get_logo_html(
+            css_class="intro-brand",
+            image_class="intro-brand-image"
+        ),
         unsafe_allow_html=True
     )
 

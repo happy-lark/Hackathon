@@ -1,3 +1,5 @@
+import base64
+
 from pathlib import Path
 
 import streamlit as st
@@ -6,6 +8,8 @@ from utils.navigation import go_to_page
 
 
 MASCOT_PATH = Path("assets/persona_mascot.png")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LOGO_PATH = PROJECT_ROOT / "assets" / "Logo_cropped.png"
 
 
 def show_landing_page():
@@ -16,10 +20,8 @@ def show_landing_page():
     )
 
     with logo_col:
-        st.markdown(
-            '<div class="landing-logo"><span class="landing-logo-icon">P</span><span>PersonaLab</span></div>',
-            unsafe_allow_html=True
-        )
+        with logo_col:
+            st.markdown(get_logo_html(), unsafe_allow_html=True)
 
     with home_col:
         st.markdown(
@@ -55,7 +57,7 @@ def show_landing_page():
 
     # 메인 영역
     text_col, image_col = st.columns(
-    [1, 2],
+    [1, 2.3],
     gap="medium",
     vertical_alignment="center"
 )
@@ -129,3 +131,26 @@ def show_landing_page():
             '<div class="landing-feature-card"><div class="landing-feature-icon">📈</div><div class="landing-feature-title">Get Your Report</div><div class="landing-feature-description">AI analyzes and recommends<br>your best match.</div></div>',
             unsafe_allow_html=True
         )
+        
+def get_image_mime_type(image_path):
+    mime_types = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+    return mime_types.get(image_path.suffix.lower(), "image/png")
+
+
+def get_logo_html():
+    if not LOGO_PATH.exists():
+        return """
+        <div class="landing-logo-fallback">
+            <span class="landing-logo-fallback-icon">P</span>
+            <span>PersonaLab</span>
+        </div>
+        """
+
+    encoded_logo = base64.b64encode(LOGO_PATH.read_bytes()).decode("utf-8")
+    mime_type = get_image_mime_type(LOGO_PATH)
+
+    return f"""
+    <div class="landing-logo">
+        <img class="landing-logo-image" src="data:{mime_type};base64,{encoded_logo}" alt="PersonaLab">
+    </div>
+    """
