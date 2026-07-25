@@ -55,7 +55,6 @@ PAGE_ROUTES = {
     "photo_editor":show_photo_editor_page,
     #"personal_color": show_personal_color_page,
     "image_edit_result": show_image_edit_result_page,
-    
 }
 
 

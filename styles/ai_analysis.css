@@ -155,8 +155,10 @@
     justify-content: center;
     align-items: center;
 
-    width: 190px;
-    height: 190px;
+    box-sizing: border-box;
+
+    width: 210px;
+    height: 210px;
 
     padding: 10px;
 
@@ -180,6 +182,8 @@
     justify-content: center;
     align-items: center;
 
+    box-sizing: border-box;
+
     width: 100%;
     height: 100%;
 
@@ -190,17 +194,27 @@
     background: linear-gradient(
         145deg,
         #ffffff,
-        #f5f2ff
+        #f6f3ff
     );
 
     transform: rotate(90deg);
 }
 
+
+/* 새 로봇 이미지 */
+
 .analysis-mascot-image {
-    width: 135px;
-    height: 135px;
+    display: block;
+
+    width: 168px;
+    height: 168px;
+
+    margin: 0;
 
     object-fit: contain;
+    object-position: center;
+
+    transform: scale(1.04);
 }
 
 .analysis-robot-fallback {
@@ -303,6 +317,8 @@
     justify-content: center;
     align-items: center;
 
+    box-sizing: border-box;
+
     width: calc(100% - 32px);
     max-width: 560px;
 
@@ -338,7 +354,7 @@
     width: 44px;
     height: 44px;
 
-    margin-bottom: 13px;
+    margin: 0 auto 13px auto;
 
     border-radius: 50%;
 
@@ -350,12 +366,18 @@
 }
 
 .analysis-finished-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
     width: 100%;
 
     text-align: center;
 }
 
 .analysis-finished-title {
+    width: 100%;
+
     margin-bottom: 7px;
 
     color: #292742;
@@ -363,9 +385,12 @@
     font-size: 19px;
     font-weight: 800;
     line-height: 1.4;
+
+    text-align: center;
 }
 
 .analysis-finished-description {
+    width: 100%;
     max-width: 440px;
 
     margin: 0 auto;
@@ -374,6 +399,8 @@
 
     font-size: 14px;
     line-height: 1.65;
+
+    text-align: center;
 }
 
 
@@ -394,6 +421,7 @@
 }
 
 .st-key-analysis_continue_button button {
+    width: 100%;
     min-height: 52px;
 
     border-radius: 11px;
@@ -518,13 +546,13 @@
     }
 
     .analysis-progress-ring {
-        width: 165px;
-        height: 165px;
+        width: 180px;
+        height: 180px;
     }
 
     .analysis-mascot-image {
-        width: 115px;
-        height: 115px;
+        width: 142px;
+        height: 142px;
     }
 
     .analysis-progress-text {
@@ -582,13 +610,13 @@
     }
 
     .analysis-progress-ring {
-        width: 145px;
-        height: 145px;
+        width: 160px;
+        height: 160px;
     }
 
     .analysis-mascot-image {
-        width: 100px;
-        height: 100px;
+        width: 126px;
+        height: 126px;
     }
 
     .analysis-finished-card {

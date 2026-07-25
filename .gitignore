@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 
 .env
+
+assets/backgrounds/office/
+assets/backgrounds/urban/
+assets/backgrounds/nature/

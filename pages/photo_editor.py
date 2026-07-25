@@ -1,16 +1,19 @@
 """
 pages/photo_editor.py
 
-Step 6. Optimize Your Photo
+Step 7. Optimize Your Photo
 
 역할:
 - 선택된 사진 불러오기
 - 배경 옵션 선택
-- 단색 배경 색상 선택
+- Match Report의 추천 색상을 단색 배경 후보로 사용
 - 밝기, 대비, 채도, 선명도 조절
 - analysis/image_editor.py를 통해 실제 이미지 편집
+- Applied Changes를 영어로 표시
 - 최종 편집 이미지를 다음 페이지로 전달
 """
+
+import re
 
 from textwrap import dedent
 
@@ -25,6 +28,10 @@ from analysis.image_editor import (
     process_images
 )
 from utils.navigation import go_to_page
+
+
+TOTAL_STEPS = 7
+CURRENT_STEP = 7
 
 
 BACKGROUND_OPTIONS = [
@@ -46,21 +53,15 @@ BACKGROUND_VALUE_MAP = {
 }
 
 
-SOLID_COLOR_OPTIONS = {
-    "Soft Gray": "#D9DCE3",
-    "Light Blue": "#BFD7F4",
-    "Warm Beige": "#D6A56F",
-    "Soft Cream": "#F1E2C7",
-    "Muted Teal": "#72AFC4"
-}
-
-
-PERSONAL_COLOR_RECOMMENDATIONS = {
-    "Spring Warm": "Warm Beige",
-    "Summer Cool": "Light Blue",
-    "Autumn Warm": "Warm Beige",
-    "Winter Cool": "Soft Gray"
-}
+# Match Report의 추천 색상 결과가 없을 때만 사용합니다.
+DEFAULT_RECOMMENDED_COLORS = [
+    "#D9DCE3",
+    "#BFD7F4",
+    "#D6A56F",
+    "#F1E2C7",
+    "#72AFC4",
+    "#8F8DBD"
+]
 
 
 DEFAULT_IMAGE_ADJUSTMENTS = {
@@ -73,7 +74,7 @@ DEFAULT_IMAGE_ADJUSTMENTS = {
 
 def clean_html(html_content):
     """
-    HTML이 코드 블록으로 표시되지 않도록
+    HTML이 Streamlit 코드 블록으로 표시되지 않도록
     들여쓰기와 줄바꿈을 제거합니다.
     """
 
@@ -92,8 +93,58 @@ def render_html(html_content):
     """
 
     st.markdown(
-        clean_html(html_content),
+        clean_html(
+            html_content
+        ),
         unsafe_allow_html=True
+    )
+
+
+def build_progress_html():
+    """
+    현재 단계에 맞춰 1~7 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span class="photo-editor-progress-dot {state_class}">
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span
+                    class="photo-editor-progress-line {line_class}"
+                ></span>
+                """
+            )
+
+    return "".join(
+        progress_parts
     )
 
 
@@ -103,10 +154,18 @@ def extract_pil_image(image_item):
     PIL 이미지를 추출합니다.
     """
 
-    if isinstance(image_item, Image.Image):
-        return image_item.convert("RGB")
+    if isinstance(
+        image_item,
+        Image.Image
+    ):
+        return image_item.convert(
+            "RGB"
+        )
 
-    if isinstance(image_item, dict):
+    if isinstance(
+        image_item,
+        dict
+    ):
         possible_keys = [
             "image",
             "original_image",
@@ -115,10 +174,17 @@ def extract_pil_image(image_item):
         ]
 
         for key in possible_keys:
-            image = image_item.get(key)
+            image = image_item.get(
+                key
+            )
 
-            if isinstance(image, Image.Image):
-                return image.convert("RGB")
+            if isinstance(
+                image,
+                Image.Image
+            ):
+                return image.convert(
+                    "RGB"
+                )
 
     return None
 
@@ -163,7 +229,9 @@ def get_selected_photo():
     )
 
     selected_image = extract_pil_image(
-        uploaded_images[selected_index]
+        uploaded_images[
+            selected_index
+        ]
     )
 
     if selected_image is None:
@@ -175,9 +243,41 @@ def get_selected_photo():
     }
 
 
+def normalize_hex_color(value):
+    """
+    색상값을 올바른 #RRGGBB 형식으로 변환합니다.
+    """
+
+    if not isinstance(
+        value,
+        str
+    ):
+        return None
+
+    value = value.strip().upper()
+
+    if not value.startswith("#"):
+        value = f"#{value}"
+
+    if len(value) != 7:
+        return None
+
+    valid_characters = set(
+        "0123456789ABCDEF"
+    )
+
+    if not all(
+        character in valid_characters
+        for character in value[1:]
+    ):
+        return None
+
+    return value
+
+
 def get_color_analysis_result():
     """
-    Match Report에서 저장한 퍼스널컬러 결과를 가져옵니다.
+    Match Report에서 저장한 퍼스널컬러 분석 원본 결과를 가져옵니다.
     """
 
     color_result = st.session_state.get(
@@ -232,17 +332,68 @@ def get_personal_color_season():
     return None
 
 
-def get_recommended_color_name():
+def get_recommended_palette():
     """
-    퍼스널컬러에 따라 추천 단색 배경 이름을 반환합니다.
+    Match Report의 Color Recommendation에서 사용한
+    추천 색상 목록을 그대로 가져옵니다.
+
+    결과가 없거나 잘못된 경우 기본 팔레트를 반환합니다.
     """
 
-    season = get_personal_color_season()
-
-    return PERSONAL_COLOR_RECOMMENDATIONS.get(
-        season,
-        "Light Blue"
+    color_result = st.session_state.get(
+        "match_report_color_result",
+        {}
     )
+
+    if not isinstance(
+        color_result,
+        dict
+    ):
+        return DEFAULT_RECOMMENDED_COLORS.copy()
+
+    raw_colors = color_result.get(
+        "colors",
+        []
+    )
+
+    if not isinstance(
+        raw_colors,
+        list
+    ):
+        return DEFAULT_RECOMMENDED_COLORS.copy()
+
+    normalized_colors = []
+
+    for color in raw_colors:
+        normalized_color = normalize_hex_color(
+            color
+        )
+
+        if (
+            normalized_color
+            and normalized_color
+            not in normalized_colors
+        ):
+            normalized_colors.append(
+                normalized_color
+            )
+
+    if not normalized_colors:
+        return DEFAULT_RECOMMENDED_COLORS.copy()
+
+    return normalized_colors
+
+
+def get_default_recommended_color():
+    """
+    추천 팔레트의 첫 번째 색상을 기본 선택값으로 사용합니다.
+    """
+
+    recommended_palette = (
+        get_recommended_palette()
+    )
+
+    return recommended_palette[0]
 
 
 def initialize_editor_state():
@@ -250,8 +401,12 @@ def initialize_editor_state():
     Photo Editor에 필요한 session_state를 초기화합니다.
     """
 
-    recommended_color = (
-        get_recommended_color_name()
+    recommended_palette = (
+        get_recommended_palette()
+    )
+
+    default_color = (
+        recommended_palette[0]
     )
 
     st.session_state.setdefault(
@@ -259,10 +414,14 @@ def initialize_editor_state():
         "Original"
     )
 
-    st.session_state.setdefault(
-        "photo_editor_solid_color_name",
-        recommended_color
+    selected_color = st.session_state.get(
+        "photo_editor_solid_color"
     )
+
+    if selected_color not in recommended_palette:
+        st.session_state[
+            "photo_editor_solid_color"
+        ] = default_color
 
     st.session_state.setdefault(
         "photo_editor_brightness",
@@ -295,8 +454,8 @@ def reset_editor_state():
     ] = "Original"
 
     st.session_state[
-        "photo_editor_solid_color_name"
-    ] = get_recommended_color_name()
+        "photo_editor_solid_color"
+    ] = get_default_recommended_color()
 
     st.session_state[
         "photo_editor_brightness"
@@ -346,7 +505,8 @@ def slider_value_to_factor(
         min(
             1.5,
             1.0
-            + slider_value * 0.01
+            + slider_value
+            * 0.01
         )
     )
 
@@ -490,9 +650,7 @@ def run_photo_edit(
             edit_option=edit_option,
             image_adjustments=image_adjustments,
             background_type=background_type,
-            color_analysis_result=(
-                color_analysis_result
-            )
+            color_analysis_result=color_analysis_result
         )
 
     except Exception as error:
@@ -563,7 +721,9 @@ def run_photo_edit(
 
     return {
         "success": True,
-        "image": edited_image.convert("RGB"),
+        "image": edited_image.convert(
+            "RGB"
+        ),
         "descriptions": first_result.get(
             "descriptions",
             []
@@ -574,9 +734,292 @@ def run_photo_edit(
     }
 
 
+def translate_applied_change(
+    description
+):
+    """
+    이미지 편집 모듈이 반환한 한국어 설명을
+    발표용 영어 문장으로 변환합니다.
+
+    이미 영어인 설명은 그대로 반환합니다.
+    """
+
+    if not isinstance(
+        description,
+        str
+    ):
+        return str(description)
+
+    translated = description.strip()
+
+    if not translated:
+        return ""
+
+    # ========================================
+    # 배경 변경 설명
+    # ========================================
+
+    background_match = re.search(
+        (
+            r"사진 속 인물은 유지하고 "
+            r"기존 배경만 (.+?) 배경으로 "
+            r"변경했습니다"
+        ),
+        translated
+    )
+
+    if background_match:
+        background_name = (
+            background_match.group(1)
+            .strip()
+        )
+
+        if (
+            "실제 배경 파일이 없어"
+            in translated
+            or "자동 생성된"
+            in translated
+        ):
+            return (
+                "The person was preserved while the original "
+                f"background was replaced with a {background_name} "
+                "background. Because no background image file was "
+                f"available, an automatically generated "
+                f"{background_name} background was used."
+            )
+
+        return (
+            "The person was preserved while the original "
+            f"background was replaced with a "
+            f"{background_name} background."
+        )
+
+    # ========================================
+    # Blur 배경
+    # ========================================
+
+    if "블러" in translated:
+        blur_match = re.search(
+            r"블러 강도\s*([0-9.]+)",
+            translated
+        )
+
+        if blur_match:
+            blur_strength = (
+                blur_match.group(1)
+            )
+
+            return (
+                "The person was kept sharp while a blur "
+                f"strength of {blur_strength} was applied "
+                "to the original background."
+            )
+
+        return (
+            "The person was kept sharp while the "
+            "original background was blurred."
+        )
+
+    # ========================================
+    # 단색 배경
+    # ========================================
+
+    solid_color_match = re.search(
+        (
+            r"배경만\s*"
+            r"(#[0-9A-Fa-f]{6}|.+?)\s*"
+            r"단색으로 변경했습니다"
+        ),
+        translated
+    )
+
+    if solid_color_match:
+        color_value = (
+            solid_color_match.group(1)
+            .strip()
+        )
+
+        return (
+            "The person was preserved while the background "
+            f"was replaced with the solid color {color_value}."
+        )
+
+    # ========================================
+    # 이미지 보정 설명
+    # ========================================
+
+    adjustment_sentences = []
+
+    brightness_up = re.search(
+        r"밝기를 약\s*(\d+)%\s*높여",
+        translated
+    )
+
+    brightness_down = re.search(
+        r"밝기를 약\s*(\d+)%\s*낮춰",
+        translated
+    )
+
+    contrast_up = re.search(
+        r"대비를 약\s*(\d+)%\s*높여",
+        translated
+    )
+
+    contrast_down = re.search(
+        r"대비를 약\s*(\d+)%\s*낮춰",
+        translated
+    )
+
+    saturation_up = re.search(
+        r"채도를 약\s*(\d+)%\s*높여",
+        translated
+    )
+
+    saturation_down = re.search(
+        r"채도를 약\s*(\d+)%\s*낮춰",
+        translated
+    )
+
+    sharpness_up = re.search(
+        r"선명도를 약\s*(\d+)%\s*높여",
+        translated
+    )
+
+    sharpness_down = re.search(
+        r"선명도를 약\s*(\d+)%\s*낮춰",
+        translated
+    )
+
+    if brightness_up:
+        adjustment_sentences.append(
+            "Brightness was increased by approximately "
+            f"{brightness_up.group(1)}% to make the photo brighter."
+        )
+
+    elif brightness_down:
+        adjustment_sentences.append(
+            "Brightness was reduced by approximately "
+            f"{brightness_down.group(1)}% to lower the exposure."
+        )
+
+    elif (
+        "밝기는 원본 상태" in translated
+        or "밝기는 원본 상태를 유지" in translated
+    ):
+        adjustment_sentences.append(
+            "Brightness was kept at its original level."
+        )
+
+    if contrast_up:
+        adjustment_sentences.append(
+            "Contrast was increased by approximately "
+            f"{contrast_up.group(1)}% to make tonal differences clearer."
+        )
+
+    elif contrast_down:
+        adjustment_sentences.append(
+            "Contrast was reduced by approximately "
+            f"{contrast_down.group(1)}% to create softer tonal transitions."
+        )
+
+    elif (
+        "대비는 원본 상태" in translated
+        or "대비는 원본 상태를 유지" in translated
+    ):
+        adjustment_sentences.append(
+            "Contrast was kept at its original level."
+        )
+
+    if saturation_up:
+        adjustment_sentences.append(
+            "Saturation was increased by approximately "
+            f"{saturation_up.group(1)}% to enhance the colors."
+        )
+
+    elif saturation_down:
+        adjustment_sentences.append(
+            "Saturation was reduced by approximately "
+            f"{saturation_down.group(1)}% for a more muted appearance."
+        )
+
+    elif (
+        "채도는 원본 상태" in translated
+        or "채도는 원본 상태를 유지" in translated
+    ):
+        adjustment_sentences.append(
+            "Saturation was kept at its original level."
+        )
+
+    if sharpness_up:
+        adjustment_sentences.append(
+            "Sharpness was increased by approximately "
+            f"{sharpness_up.group(1)}% to enhance image details."
+        )
+
+    elif sharpness_down:
+        adjustment_sentences.append(
+            "Sharpness was reduced by approximately "
+            f"{sharpness_down.group(1)}% for a softer appearance."
+        )
+
+    elif (
+        "선명도는 원본 상태" in translated
+        or "선명도는 원본 상태를 유지" in translated
+    ):
+        adjustment_sentences.append(
+            "Sharpness was kept at its original level."
+        )
+
+    if adjustment_sentences:
+        return " ".join(
+            adjustment_sentences
+        )
+
+    # 변환 규칙에 해당하지 않는 영어 문장은 그대로 표시합니다.
+    return translated
+
+
+def inject_palette_button_styles(
+    palette
+):
+    """
+    Match Report의 추천 색상에 맞게
+    각 Streamlit 색상 버튼의 배경 CSS를 동적으로 생성합니다.
+    """
+
+    style_rules = []
+
+    for index, hex_color in enumerate(
+        palette
+    ):
+        style_rules.append(
+            f"""
+            .st-key-photo_editor_palette_{index} button {{
+                background: {hex_color} !important;
+            }}
+
+            .st-key-photo_editor_palette_{index} button:hover {{
+                background: {hex_color} !important;
+            }}
+
+            .st-key-photo_editor_palette_{index} button:focus {{
+                background: {hex_color} !important;
+            }}
+            """
+        )
+
+    render_html(
+        f"""
+        <style>
+            {''.join(style_rules)}
+        </style>
+        """
+    )
+
+
 def show_progress_header():
     """
-    상단 Back 버튼과 진행 단계를 표시합니다.
+    상단 Back 버튼과 1~7 진행 단계를 표시합니다.
     """
 
     (
@@ -584,7 +1027,7 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.2, 4.2, 1.2],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
@@ -599,24 +1042,9 @@ def show_progress_header():
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="photo-editor-progress">
-                <span class="photo-editor-progress-dot completed">1</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">2</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">3</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">4</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot completed">5</span>
-                <span class="photo-editor-progress-line completed"></span>
-
-                <span class="photo-editor-progress-dot active">6</span>
+                {build_progress_html()}
             </div>
             """
         )
@@ -634,7 +1062,7 @@ def show_page_header():
         """
         <div class="photo-editor-header">
             <div class="photo-editor-title">
-                Step 6. Optimize Your Photo
+                Step 7. Optimize Your Photo
             </div>
 
             <div class="photo-editor-description">
@@ -647,21 +1075,42 @@ def show_page_header():
 
 def show_solid_color_options():
     """
-    원형 색상 Swatch와 추천 색상을 표시합니다.
+    Match Report의 Color Recommendation 팔레트를
+    단색 배경 선택지로 표시합니다.
     """
 
-    recommended_color_name = (
-        get_recommended_color_name()
+    recommended_palette = (
+        get_recommended_palette()
     )
 
     personal_color_season = (
         get_personal_color_season()
     )
 
+    selected_color = st.session_state.get(
+        "photo_editor_solid_color",
+        recommended_palette[0]
+    )
+
+    if selected_color not in recommended_palette:
+        selected_color = (
+            recommended_palette[0]
+        )
+
+        st.session_state[
+            "photo_editor_solid_color"
+        ] = selected_color
+
+    inject_palette_button_styles(
+        recommended_palette
+    )
+
     render_html(
         f"""
         <div class="photo-editor-color-header">
-            <span>Recommended colors</span>
+            <span>
+                Recommended colors
+            </span>
 
             <small>
                 Based on {personal_color_season or "your photo"}
@@ -670,37 +1119,22 @@ def show_solid_color_options():
         """
     )
 
-    color_names = list(
-        SOLID_COLOR_OPTIONS.keys()
-    )
-
     color_columns = st.columns(
-        len(color_names)
+        len(recommended_palette)
     )
 
-    for column, color_name in zip(
-        color_columns,
-        color_names
+    for index, (
+        column,
+        hex_color
+    ) in enumerate(
+        zip(
+            color_columns,
+            recommended_palette
+        )
     ):
-        hex_color = SOLID_COLOR_OPTIONS[
-            color_name
-        ]
-
         is_selected = (
-            st.session_state.get(
-                "photo_editor_solid_color_name"
-            )
-            == color_name
-        )
-
-        is_recommended = (
-            color_name
-            == recommended_color_name
-        )
-
-        key_suffix = (
-            color_name.lower()
-            .replace(" ", "_")
+            selected_color
+            == hex_color
         )
 
         with column:
@@ -713,47 +1147,48 @@ def show_solid_color_options():
             if st.button(
                 button_text,
                 key=(
-                    "photo_editor_color_"
-                    f"{key_suffix}"
+                    f"photo_editor_palette_{index}"
                 ),
-                use_container_width=True
+                use_container_width=True,
+                help=hex_color
             ):
                 st.session_state[
-                    "photo_editor_solid_color_name"
-                ] = color_name
+                    "photo_editor_solid_color"
+                ] = hex_color
 
                 st.rerun()
 
-            recommended_html = (
-                '<span class="recommended-badge">'
-                'Recommended'
-                '</span>'
-                if is_recommended
+            selected_badge = (
+                """
+                <span class="recommended-badge">
+                    Selected
+                </span>
+                """
+                if is_selected
                 else ""
             )
 
             render_html(
                 f"""
                 <div class="photo-editor-color-label">
-                    <span>{color_name}</span>
-                    {recommended_html}
+                    <span>
+                        {hex_color}
+                    </span>
+
+                    {selected_badge}
                 </div>
                 """
             )
 
-    selected_color_name = st.session_state.get(
-        "photo_editor_solid_color_name",
-        recommended_color_name
+    return st.session_state.get(
+        "photo_editor_solid_color",
+        recommended_palette[0]
     )
-
-    return SOLID_COLOR_OPTIONS[
-        selected_color_name
-    ]
 
 
 def show_background_options():
     """
-    Background 카드 옵션과 단색 추천색을 표시합니다.
+    Background 카드 옵션과 추천 단색 팔레트를 표시합니다.
     """
 
     render_html(
@@ -834,12 +1269,14 @@ def show_adjustment_options():
 
 def show_photo_editor_page():
     """
-    Step 6. Optimize Your Photo 페이지입니다.
+    Step 7. Optimize Your Photo 페이지입니다.
     """
 
     initialize_editor_state()
 
-    selected_photo = get_selected_photo()
+    selected_photo = (
+        get_selected_photo()
+    )
 
     if selected_photo is None:
         st.error(
@@ -880,7 +1317,9 @@ def show_photo_editor_page():
         )
 
         with image_column:
-            image_placeholder = st.empty()
+            image_placeholder = (
+                st.empty()
+            )
 
         with option_column:
             (
@@ -889,7 +1328,10 @@ def show_photo_editor_page():
             ) = show_background_options()
 
         render_html(
-            '<div class="photo-editor-adjustment-space"></div>'
+            """
+            <div class="photo-editor-adjustment-space">
+            </div>
+            """
         )
 
         image_adjustments = (
@@ -957,15 +1399,26 @@ def show_photo_editor_page():
             and descriptions
         ):
             with st.expander(
-                "Applied changes"
+                "Applied Changes",
+                expanded=True
             ):
                 for description in descriptions:
-                    st.write(
-                        f"• {description}"
+                    english_description = (
+                        translate_applied_change(
+                            description
+                        )
                     )
 
+                    if english_description:
+                        st.write(
+                            f"• {english_description}"
+                        )
+
         render_html(
-            '<div class="photo-editor-button-space"></div>'
+            """
+            <div class="photo-editor-button-space">
+            </div>
+            """
         )
 
         reset_column, apply_column = st.columns(
@@ -979,6 +1432,7 @@ def show_photo_editor_page():
                 key="photo_editor_reset_button"
             ):
                 reset_editor_state()
+
                 st.rerun()
 
         with apply_column:
@@ -1027,12 +1481,19 @@ def show_photo_editor_page():
                     image_adjustments
                 )
 
+                english_descriptions = [
+                    translate_applied_change(
+                        description
+                    )
+                    for description in preview_result.get(
+                        "descriptions",
+                        []
+                    )
+                ]
+
                 st.session_state[
                     "photo_editor_descriptions"
-                ] = preview_result.get(
-                    "descriptions",
-                    []
-                )
+                ] = english_descriptions
 
                 go_to_page(
                     "image_edit_result"

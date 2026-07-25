@@ -1166,6 +1166,11 @@ def change_background(
             size=original_image.size,
             background_name=selected_type
         )
+        
+        # 배경만 블러 처리해서 자연스러운 심도 효과 연출
+        background_image = background_image.filter(
+            ImageFilter.GaussianBlur(radius=12)
+        )
 
         display_name = (
             selected_type.capitalize()
