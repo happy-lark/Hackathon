@@ -1,3 +1,12 @@
+"""
+pages/ai_analysis.py
+
+Step 4. AI Analysis
+
+업로드된 사진을 분석하고,
+분석 진행 상태 및 완료 화면을 표시합니다.
+"""
+
 import base64
 import time
 
@@ -12,7 +21,17 @@ from analysis.analyzer import (
 from utils.navigation import go_to_page
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+TOTAL_STEPS = 7
+CURRENT_STEP = 4
+
+
+PROJECT_ROOT = (
+    Path(__file__)
+    .resolve()
+    .parent
+    .parent
+)
+
 
 MASCOT_PATH = (
     PROJECT_ROOT
@@ -31,7 +50,7 @@ ANALYSIS_STEPS = [
 ]
 
 
-def clean_html(html):
+def clean_html(html_content):
     """
     HTML의 들여쓰기와 불필요한 줄바꿈을 제거합니다.
 
@@ -41,33 +60,86 @@ def clean_html(html):
 
     return " ".join(
         line.strip()
-        for line in dedent(html).strip().splitlines()
+        for line in dedent(
+            html_content
+        ).strip().splitlines()
         if line.strip()
     )
 
 
-def render_html(html):
+def render_html(html_content):
     """
     HTML을 현재 Streamlit 위치에 렌더링합니다.
     """
 
     st.markdown(
-        clean_html(html),
+        clean_html(
+            html_content
+        ),
         unsafe_allow_html=True
     )
 
 
 def render_placeholder_html(
     placeholder,
-    html
+    html_content
 ):
     """
     HTML을 지정한 placeholder 내부에 렌더링합니다.
     """
 
     placeholder.markdown(
-        clean_html(html),
+        clean_html(
+            html_content
+        ),
         unsafe_allow_html=True
+    )
+
+
+def build_progress_html():
+    """
+    현재 단계에 맞춰 1~7단계 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span class="analysis-top-dot {state_class}">
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span class="analysis-top-line {line_class}">
+                </span>
+                """
+            )
+
+    return "".join(
+        progress_parts
     )
 
 
@@ -83,7 +155,17 @@ def reset_analysis_state():
         "photo_ranking",
         "best_photo_index",
         "selected_photo_index",
-        "best_match_score"
+        "best_match_score",
+        "selected_photo_match_score",
+        "selected_photo_alignment",
+        "selected_photo_quality",
+        "match_report_strengths",
+        "match_report_improvements",
+        "match_report_color_result",
+        "match_report_color_index",
+        "optimized_image",
+        "edited_image",
+        "photo_editor_preview_result"
     ]
 
     for key in keys_to_remove:
@@ -108,7 +190,9 @@ def get_mascot_html():
 
     encoded_image = base64.b64encode(
         MASCOT_PATH.read_bytes()
-    ).decode("utf-8")
+    ).decode(
+        "utf-8"
+    )
 
     return f"""
     <img
@@ -121,7 +205,9 @@ def get_mascot_html():
 
 def show_progress_header():
     """
-    Back 버튼과 상단 5단계 진행 상태를 표시합니다.
+    Back 버튼과 상단 1~7단계 진행 상태를 표시합니다.
+
+    현재 AI Analysis 페이지는 Step 4입니다.
     """
 
     (
@@ -129,7 +215,7 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.15, 4.7, 1.15],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
@@ -138,21 +224,15 @@ def show_progress_header():
             "‹ Back",
             key="analysis_top_back"
         ):
-            go_to_page("upload")
+            go_to_page(
+                "upload"
+            )
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="analysis-top-progress">
-                <div class="analysis-top-dot completed">1</div>
-                <div class="analysis-top-line completed"></div>
-                <div class="analysis-top-dot completed">2</div>
-                <div class="analysis-top-line completed"></div>
-                <div class="analysis-top-dot completed">3</div>
-                <div class="analysis-top-line completed"></div>
-                <div class="analysis-top-dot active">4</div>
-                <div class="analysis-top-line"></div>
-                <div class="analysis-top-dot">5</div>
+                {build_progress_html()}
             </div>
             """
         )
@@ -171,25 +251,45 @@ def build_analysis_visual_html(
 
     progress = max(
         0,
-        min(progress, 100)
+        min(
+            progress,
+            100
+        )
     )
 
-    progress_angle = progress * 3.6
-    mascot_html = get_mascot_html()
+    progress_angle = (
+        progress
+        * 3.6
+    )
+
+    mascot_html = (
+        get_mascot_html()
+    )
 
     if finished:
-        status_text = "Analysis Complete"
-        status_class = "finished"
+        status_text = (
+            "Analysis Complete"
+        )
+
+        status_class = (
+            "finished"
+        )
 
     else:
-        status_text = f"Analyzing... {progress}%"
+        status_text = (
+            f"Analyzing... {progress}%"
+        )
+
         status_class = ""
 
     return f"""
     <div class="analysis-visual-wrapper">
         <div
             class="analysis-progress-ring"
-            style="--progress-angle: {progress_angle}deg;"
+            style="
+                --progress-angle:
+                {progress_angle}deg;
+            "
         >
             <div class="analysis-progress-inner">
                 {mascot_html}
@@ -212,14 +312,16 @@ def render_analysis_visual(
     원형 진행률을 placeholder에 렌더링합니다.
     """
 
-    html = build_analysis_visual_html(
-        progress=progress,
-        finished=finished
+    visual_html = (
+        build_analysis_visual_html(
+            progress=progress,
+            finished=finished
+        )
     )
 
     render_placeholder_html(
-        placeholder,
-        html
+        placeholder=placeholder,
+        html_content=visual_html
     )
 
 
@@ -282,14 +384,16 @@ def render_analysis_steps(
     분석 체크리스트를 placeholder에 렌더링합니다.
     """
 
-    html = build_analysis_steps_html(
-        active_step=active_step,
-        all_completed=all_completed
+    steps_html = (
+        build_analysis_steps_html(
+            active_step=active_step,
+            all_completed=all_completed
+        )
     )
 
     render_placeholder_html(
-        placeholder,
-        html
+        placeholder=placeholder,
+        html_content=steps_html
     )
 
 
@@ -368,7 +472,10 @@ def show_analysis_finished():
     )
 
     render_html(
-        '<div class="analysis-finished-button-space"></div>'
+        """
+        <div class="analysis-finished-button-space">
+        </div>
+        """
     )
 
     if st.button(
@@ -389,16 +496,22 @@ def show_analysis_error(
     분석 실패 메시지와 재시도 버튼을 표시합니다.
     """
 
-    error_message = analysis_result.get(
-        "message",
-        "The photos could not be analyzed."
+    error_message = (
+        analysis_result.get(
+            "message",
+            "The photos could not be analyzed."
+        )
     )
 
-    st.error(error_message)
+    st.error(
+        error_message
+    )
 
-    individual_results = analysis_result.get(
-        "individual_results",
-        []
+    individual_results = (
+        analysis_result.get(
+            "individual_results",
+            []
+        )
     )
 
     for item in individual_results:
@@ -422,10 +535,15 @@ def show_analysis_error(
         )
 
         st.warning(
-            f"Photo {image_index}: {message}"
+            f"Photo {image_index}: "
+            f"{message}"
         )
 
-    retry_column, back_column = st.columns(2)
+    retry_column, back_column = (
+        st.columns(
+            2
+        )
+    )
 
     with retry_column:
         if st.button(
@@ -435,6 +553,7 @@ def show_analysis_error(
             key="analysis_retry_button"
         ):
             reset_analysis_state()
+
             st.rerun()
 
     with back_column:
@@ -444,7 +563,10 @@ def show_analysis_error(
             key="analysis_back_upload_button"
         ):
             reset_analysis_state()
-            go_to_page("upload")
+
+            go_to_page(
+                "upload"
+            )
 
 
 def run_analysis(images):
@@ -458,8 +580,13 @@ def run_analysis(images):
         "analysis_status"
     ] = "running"
 
-    visual_placeholder = st.empty()
-    steps_placeholder = st.empty()
+    visual_placeholder = (
+        st.empty()
+    )
+
+    steps_placeholder = (
+        st.empty()
+    )
 
     update_analysis_screen(
         visual_placeholder=visual_placeholder,
@@ -468,7 +595,9 @@ def run_analysis(images):
         active_step=0
     )
 
-    time.sleep(0.3)
+    time.sleep(
+        0.3
+    )
 
     update_analysis_screen(
         visual_placeholder=visual_placeholder,
@@ -477,7 +606,9 @@ def run_analysis(images):
         active_step=1
     )
 
-    time.sleep(0.3)
+    time.sleep(
+        0.3
+    )
 
     update_analysis_screen(
         visual_placeholder=visual_placeholder,
@@ -486,7 +617,9 @@ def run_analysis(images):
         active_step=2
     )
 
-    time.sleep(0.25)
+    time.sleep(
+        0.25
+    )
 
     try:
         analysis_result = (
@@ -511,7 +644,9 @@ def run_analysis(images):
         active_step=3
     )
 
-    time.sleep(0.3)
+    time.sleep(
+        0.3
+    )
 
     update_analysis_screen(
         visual_placeholder=visual_placeholder,
@@ -520,7 +655,9 @@ def run_analysis(images):
         active_step=4
     )
 
-    time.sleep(0.3)
+    time.sleep(
+        0.3
+    )
 
     update_analysis_screen(
         visual_placeholder=visual_placeholder,
@@ -529,7 +666,9 @@ def run_analysis(images):
         active_step=5
     )
 
-    time.sleep(0.3)
+    time.sleep(
+        0.3
+    )
 
     if not analysis_result.get(
         "success",
@@ -568,13 +707,18 @@ def run_analysis(images):
         None
     )
 
-    # 새 분석 결과가 만들어졌으므로
-    # 이전 사진 순위 결과는 제거합니다.
     ranking_keys = [
         "photo_ranking",
         "best_photo_index",
         "selected_photo_index",
-        "best_match_score"
+        "best_match_score",
+        "selected_photo_match_score",
+        "selected_photo_alignment",
+        "selected_photo_quality",
+        "match_report_strengths",
+        "match_report_improvements",
+        "match_report_color_result",
+        "match_report_color_index"
     ]
 
     for key in ranking_keys:
@@ -591,7 +735,9 @@ def run_analysis(images):
 
     render_analysis_steps(
         placeholder=steps_placeholder,
-        active_step=len(ANALYSIS_STEPS),
+        active_step=len(
+            ANALYSIS_STEPS
+        ),
         all_completed=True
     )
 
@@ -604,8 +750,13 @@ def show_completed_analysis():
     분석을 반복하지 않고 완료 화면을 유지합니다.
     """
 
-    visual_placeholder = st.empty()
-    steps_placeholder = st.empty()
+    visual_placeholder = (
+        st.empty()
+    )
+
+    steps_placeholder = (
+        st.empty()
+    )
 
     render_analysis_visual(
         placeholder=visual_placeholder,
@@ -615,7 +766,9 @@ def show_completed_analysis():
 
     render_analysis_steps(
         placeholder=steps_placeholder,
-        active_step=len(ANALYSIS_STEPS),
+        active_step=len(
+            ANALYSIS_STEPS
+        ),
         all_completed=True
     )
 
@@ -627,87 +780,75 @@ def show_ai_analysis_page():
     Step 4. AI Analysis 페이지를 표시합니다.
     """
 
-    show_progress_header()
-
-    render_html(
-        """
-        <div class="analysis-page-header">
-            <div class="analysis-page-title">
-                Step 4. AI is Analyzing Your Photos
-            </div>
-
-            <div class="analysis-page-description">
-                This may take a few moments.
-            </div>
-        </div>
-        """
+    _, content_column, _ = st.columns(
+        [0.45, 5.1, 0.45]
     )
 
-    images = st.session_state.get(
-        "uploaded_images",
-        []
-    )
+    with content_column:
+        show_progress_header()
 
-    if not images:
-        st.error(
-            "No uploaded photos were found. "
-            "Please upload at least one photo."
+        render_html(
+            """
+            <div class="analysis-page-header">
+                <div class="analysis-page-title">
+                    Step 4. AI is Analyzing Your Photos
+                </div>
+
+                <div class="analysis-page-description">
+                    This may take a few moments.
+                </div>
+            </div>
+            """
         )
 
-        if st.button(
-            "Back to Upload",
-            type="primary",
-            use_container_width=True,
-            key="analysis_no_images_back"
-        ):
-            reset_analysis_state()
-            go_to_page("upload")
-
-        return
-
-    render_html(
-        '<div class="analysis-content-space"></div>'
-    )
-
-    analysis_status = st.session_state.get(
-        "analysis_status",
-        "idle"
-    )
-
-    if (
-        analysis_status == "finished"
-        and st.session_state.get(
-            "analysis_result"
+        images = st.session_state.get(
+            "uploaded_images",
+            []
         )
-    ):
-        show_completed_analysis()
 
-    elif analysis_status == "error":
-        analysis_error_result = (
+        if not images:
+            st.error(
+                "No uploaded photos were found. "
+                "Please upload at least one photo."
+            )
+
+            if st.button(
+                "Back to Upload",
+                type="primary",
+                use_container_width=True,
+                key="analysis_no_images_back"
+            ):
+                reset_analysis_state()
+
+                go_to_page(
+                    "upload"
+                )
+
+            return
+
+        render_html(
+            """
+            <div class="analysis-content-space">
+            </div>
+            """
+        )
+
+        analysis_status = (
             st.session_state.get(
-                "analysis_error_result",
-                {
-                    "success": False,
-                    "message": (
-                        "The photos could not be analyzed."
-                    )
-                }
+                "analysis_status",
+                "idle"
             )
         )
 
-        show_analysis_error(
-            analysis_error_result
-        )
+        if (
+            analysis_status == "finished"
+            and st.session_state.get(
+                "analysis_result"
+            )
+        ):
+            show_completed_analysis()
 
-    else:
-        analysis_success = run_analysis(
-            images
-        )
-
-        if analysis_success:
-            show_analysis_finished()
-
-        else:
+        elif analysis_status == "error":
             analysis_error_result = (
                 st.session_state.get(
                     "analysis_error_result",
@@ -724,4 +865,31 @@ def show_ai_analysis_page():
                 analysis_error_result
             )
 
-    show_privacy_card()
+        else:
+            analysis_success = (
+                run_analysis(
+                    images
+                )
+            )
+
+            if analysis_success:
+                show_analysis_finished()
+
+            else:
+                analysis_error_result = (
+                    st.session_state.get(
+                        "analysis_error_result",
+                        {
+                            "success": False,
+                            "message": (
+                                "The photos could not be analyzed."
+                            )
+                        }
+                    )
+                )
+
+                show_analysis_error(
+                    analysis_error_result
+                )
+
+        show_privacy_card()

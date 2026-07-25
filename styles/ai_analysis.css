@@ -23,21 +23,21 @@
 
     flex-shrink: 0;
 
-    width: 31px;
-    height: 31px;
+    width: 28px;
+    height: 28px;
 
     border-radius: 50%;
 
     background-color: #f1f0f5;
     color: #8d8a99;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 750;
 }
 
 .analysis-top-dot.completed {
-    background-color: #f0edfb;
-    color: #777389;
+    background-color: #efecfb;
+    color: #6657df;
 }
 
 .analysis-top-dot.active {
@@ -54,16 +54,16 @@
 }
 
 .analysis-top-line {
-    width: 29px;
+    width: 20px;
     height: 2px;
 
-    margin: 0 5px;
+    margin: 0 4px;
 
     background-color: #e8e6ed;
 }
 
 .analysis-top-line.completed {
-    background-color: #ddd8ef;
+    background-color: #d8d1f4;
 }
 
 
@@ -95,6 +95,11 @@
     color: #6847f5;
 
     transform: none;
+}
+
+.st-key-analysis_top_back button:focus {
+    border: none;
+    box-shadow: none;
 }
 
 
@@ -211,6 +216,10 @@
     font-weight: 800;
 }
 
+.analysis-progress-text.finished {
+    color: #28a66f;
+}
+
 
 /* ========================================
    분석 체크리스트
@@ -282,6 +291,7 @@
 .analysis-step-icon {
     background-color: #ffffff;
 }
+
 
 /* ========================================
    분석 완료 안내
@@ -393,12 +403,6 @@
 }
 
 
-/* 완료된 진행률 문구 */
-
-.analysis-progress-text.finished {
-    color: #28a66f;
-}
-
 /* ========================================
    개인정보 안내 카드
 ======================================== */
@@ -494,16 +498,15 @@
 
 @media (max-width: 700px) {
     .analysis-top-line {
-        width: 12px;
-
-        margin: 0 3px;
+        width: 8px;
+        margin: 0 2px;
     }
 
     .analysis-top-dot {
-        width: 28px;
-        height: 28px;
+        width: 25px;
+        height: 25px;
 
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .analysis-page-header {
@@ -535,7 +538,8 @@
     .analysis-privacy-card {
         padding: 18px;
     }
-        .analysis-finished-card {
+
+    .analysis-finished-card {
         width: 100%;
 
         margin-top: 30px;
@@ -555,3 +559,45 @@
     }
 }
 
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .analysis-top-line {
+        width: 4px;
+        margin: 0 1px;
+    }
+
+    .analysis-top-dot {
+        width: 23px;
+        height: 23px;
+
+        font-size: 10px;
+    }
+
+    .analysis-page-title {
+        font-size: 22px;
+    }
+
+    .analysis-progress-ring {
+        width: 145px;
+        height: 145px;
+    }
+
+    .analysis-mascot-image {
+        width: 100px;
+        height: 100px;
+    }
+
+    .analysis-finished-card {
+        padding: 20px 15px;
+    }
+
+    .analysis-privacy-card {
+        gap: 12px;
+
+        padding: 16px;
+    }
+}

@@ -2,6 +2,7 @@
    UPLOAD PAGE
 ======================================== */
 
+
 /* ========================================
    상단 진행 단계
 ======================================== */
@@ -22,15 +23,15 @@
 
     flex-shrink: 0;
 
-    width: 31px;
-    height: 31px;
+    width: 28px;
+    height: 28px;
 
     border-radius: 50%;
 
     background-color: #f1f0f5;
     color: #8d8a99;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 750;
 }
 
@@ -48,21 +49,21 @@
 }
 
 .upload-progress-dot.completed {
-    background-color: #f0edfb;
-    color: #777389;
+    background-color: #efecfb;
+    color: #6657df;
 }
 
 .upload-progress-line {
-    width: 29px;
+    width: 20px;
     height: 2px;
 
-    margin: 0 5px;
+    margin: 0 4px;
 
     background-color: #e8e6ed;
 }
 
 .upload-progress-line.completed {
-    background-color: #ddd8ef;
+    background-color: #d8d1f4;
 }
 
 
@@ -202,15 +203,9 @@
     text-align: center;
 }
 
-
-/* Streamlit 기본 문구 숨기기 */
-
 [data-testid="stFileUploaderDropzoneInstructions"] span {
     font-size: 0;
 }
-
-
-/* Drag & drop your photos here */
 
 [data-testid="stFileUploaderDropzoneInstructions"] span::before {
     content: "Drag & drop your photos here";
@@ -224,9 +219,6 @@
     line-height: 1.5;
 }
 
-
-/* or */
-
 [data-testid="stFileUploaderDropzoneInstructions"] span::after {
     content: "or";
 
@@ -239,9 +231,6 @@
     font-size: 14px;
     font-weight: 500;
 }
-
-
-/* 기존 용량 안내 문구 숨기기 */
 
 [data-testid="stFileUploaderDropzoneInstructions"] small {
     display: none;
@@ -274,15 +263,9 @@
         rgba(104, 71, 245, 0.22);
 }
 
-
-/* Streamlit 기본 Browse files 글자 숨기기 */
-
 [data-testid="stFileUploaderDropzone"] button p {
     font-size: 0;
 }
-
-
-/* Choose Files 글자 추가 */
 
 [data-testid="stFileUploaderDropzone"] button p::after {
     content: "Choose Files";
@@ -326,11 +309,6 @@
    업로드 파일 목록 숨기기
 ======================================== */
 
-/*
-미리보기는 아래의 커스텀 5열 영역에서 표시하므로
-Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
-*/
-
 [data-testid="stFileUploaderFile"] {
     display: none;
 }
@@ -350,9 +328,6 @@ Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
     align-items: flex-start;
 }
 
-
-/* 업로드 이미지 */
-
 [data-testid="stImage"] img {
     width: 100%;
     height: 154px;
@@ -364,9 +339,6 @@ Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
     box-shadow: 0 3px 10px
         rgba(40, 35, 75, 0.08);
 }
-
-
-/* 빈 이미지 자리 */
 
 .upload-empty-photo {
     display: flex;
@@ -416,6 +388,7 @@ Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
     border-radius: 50%;
 
     background-color: #ffffff;
+
     box-shadow: 0 2px 8px
         rgba(40, 35, 80, 0.13);
 
@@ -529,15 +502,15 @@ Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
 
 @media (max-width: 700px) {
     .upload-progress-line {
-        width: 12px;
-        margin: 0 3px;
+        width: 8px;
+        margin: 0 2px;
     }
 
     .upload-progress-dot {
-        width: 28px;
-        height: 28px;
+        width: 25px;
+        height: 25px;
 
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .upload-page-header {
@@ -584,15 +557,15 @@ Streamlit이 파일명 목록을 중복 표시하지 않게 합니다.
 
 @media (max-width: 480px) {
     .upload-progress-line {
-        width: 7px;
-        margin: 0 2px;
+        width: 4px;
+        margin: 0 1px;
     }
 
     .upload-progress-dot {
-        width: 25px;
-        height: 25px;
+        width: 23px;
+        height: 23px;
 
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .upload-page-title {

@@ -4,11 +4,12 @@ pages/photo_editor.py
 Step 6. Optimize Your Photo
 
 역할:
-- 사용자가 선택한 사진 불러오기
-- 배경 변경 옵션 선택
+- 선택된 사진 불러오기
+- 배경 옵션 선택
+- 단색 배경 색상 선택
 - 밝기, 대비, 채도, 선명도 조절
-- analysis/image_editor.py를 호출해 실제 이미지 처리
-- 처리된 이미지를 image_edit_result 페이지로 전달
+- analysis/image_editor.py를 통해 실제 이미지 편집
+- 최종 편집 이미지를 다음 페이지로 전달
 """
 
 from textwrap import dedent
@@ -39,7 +40,6 @@ BACKGROUND_OPTIONS = [
 BACKGROUND_VALUE_MAP = {
     "Original": None,
     "Blur": "blur",
-    "Solid Color": "solid",
     "Office": "office",
     "Urban": "urban",
     "Nature": "nature"
@@ -49,9 +49,17 @@ BACKGROUND_VALUE_MAP = {
 SOLID_COLOR_OPTIONS = {
     "Soft Gray": "#D9DCE3",
     "Light Blue": "#BFD7F4",
-    "Warm Beige": "#E8D4B8",
-    "Soft Cream": "#F3E7D3",
-    "Muted Teal": "#8CB9C7"
+    "Warm Beige": "#D6A56F",
+    "Soft Cream": "#F1E2C7",
+    "Muted Teal": "#72AFC4"
+}
+
+
+PERSONAL_COLOR_RECOMMENDATIONS = {
+    "Spring Warm": "Warm Beige",
+    "Summer Cool": "Light Blue",
+    "Autumn Warm": "Warm Beige",
+    "Winter Cool": "Soft Gray"
 }
 
 
@@ -66,7 +74,7 @@ DEFAULT_IMAGE_ADJUSTMENTS = {
 def clean_html(html_content):
     """
     HTML이 코드 블록으로 표시되지 않도록
-    들여쓰기와 불필요한 줄바꿈을 제거합니다.
+    들여쓰기와 줄바꿈을 제거합니다.
     """
 
     return " ".join(
@@ -80,7 +88,7 @@ def clean_html(html_content):
 
 def render_html(html_content):
     """
-    HTML을 Streamlit 화면에 렌더링합니다.
+    HTML을 Streamlit 화면에 표시합니다.
     """
 
     st.markdown(
@@ -91,7 +99,7 @@ def render_html(html_content):
 
 def extract_pil_image(image_item):
     """
-    session_state에 저장된 이미지 데이터에서
+    session_state에 저장된 여러 이미지 형식에서
     PIL 이미지를 추출합니다.
     """
 
@@ -118,9 +126,6 @@ def extract_pil_image(image_item):
 def get_selected_photo():
     """
     사용자가 선택한 사진을 가져옵니다.
-
-    selected_photo_index가 없으면
-    best_photo_index를 사용합니다.
     """
 
     uploaded_images = st.session_state.get(
@@ -172,8 +177,7 @@ def get_selected_photo():
 
 def get_color_analysis_result():
     """
-    Match Report에서 저장한 퍼스널 컬러 분석 결과를
-    background_editor.py에 전달합니다.
+    Match Report에서 저장한 퍼스널컬러 결과를 가져옵니다.
     """
 
     color_result = st.session_state.get(
@@ -199,11 +203,56 @@ def get_color_analysis_result():
     return color_result
 
 
+def get_personal_color_season():
+    """
+    Match Report에서 저장된 계절 타입을 가져옵니다.
+    """
+
+    color_result = st.session_state.get(
+        "match_report_color_result",
+        {}
+    )
+
+    if not isinstance(
+        color_result,
+        dict
+    ):
+        return None
+
+    season = color_result.get(
+        "season"
+    )
+
+    if isinstance(
+        season,
+        str
+    ):
+        return season
+
+    return None
+
+
+def get_recommended_color_name():
+    """
+    퍼스널컬러에 따라 추천 단색 배경 이름을 반환합니다.
+    """
+
+    season = get_personal_color_season()
+
+    return PERSONAL_COLOR_RECOMMENDATIONS.get(
+        season,
+        "Light Blue"
+    )
+
+
 def initialize_editor_state():
     """
-    Photo Editor 페이지에서 사용하는
-    session_state 값을 초기화합니다.
+    Photo Editor에 필요한 session_state를 초기화합니다.
     """
+
+    recommended_color = (
+        get_recommended_color_name()
+    )
 
     st.session_state.setdefault(
         "photo_editor_background",
@@ -212,7 +261,7 @@ def initialize_editor_state():
 
     st.session_state.setdefault(
         "photo_editor_solid_color_name",
-        "Light Blue"
+        recommended_color
     )
 
     st.session_state.setdefault(
@@ -238,7 +287,7 @@ def initialize_editor_state():
 
 def reset_editor_state():
     """
-    모든 보정 옵션을 초기 상태로 되돌립니다.
+    모든 편집 값을 기본 상태로 초기화합니다.
     """
 
     st.session_state[
@@ -247,7 +296,7 @@ def reset_editor_state():
 
     st.session_state[
         "photo_editor_solid_color_name"
-    ] = "Light Blue"
+    ] = get_recommended_color_name()
 
     st.session_state[
         "photo_editor_brightness"
@@ -281,11 +330,7 @@ def slider_value_to_factor(
 ):
     """
     -30~30 슬라이더 값을
-    이미지 보정 배율로 변환합니다.
-
-    0   → 1.00
-    15  → 1.15
-    -10 → 0.90
+    0.70~1.30 보정 배율로 변환합니다.
     """
 
     try:
@@ -301,16 +346,14 @@ def slider_value_to_factor(
         min(
             1.5,
             1.0
-            + slider_value
-            * 0.01
+            + slider_value * 0.01
         )
     )
 
 
 def build_image_adjustments():
     """
-    UI 슬라이더 값을 image_editor.py에서 사용하는
-    보정 배율로 변환합니다.
+    슬라이더 값을 이미지 편집 배율로 변환합니다.
     """
 
     return {
@@ -345,7 +388,7 @@ def adjustments_are_default(
     image_adjustments
 ):
     """
-    보정값이 모두 기본값인지 확인합니다.
+    모든 보정값이 기본값인지 확인합니다.
     """
 
     return all(
@@ -363,8 +406,8 @@ def get_edit_option(
     image_adjustments
 ):
     """
-    선택한 배경과 보정값에 따라
-    편집 옵션을 결정합니다.
+    배경과 Adjustments 설정을 기반으로
+    이미지 편집 유형을 결정합니다.
     """
 
     background_changed = (
@@ -398,8 +441,7 @@ def get_background_type(
     selected_solid_color
 ):
     """
-    UI에서 선택한 배경값을
-    background_editor.py에 전달할 값으로 변환합니다.
+    선택된 배경 설정을 background_editor 형식으로 변환합니다.
     """
 
     if selected_background == "Original":
@@ -423,7 +465,7 @@ def run_photo_edit(
     image_adjustments
 ):
     """
-    현재 설정을 사용해 사진을 편집합니다.
+    현재 설정으로 실제 이미지 편집을 실행합니다.
     """
 
     edit_option = get_edit_option(
@@ -534,7 +576,7 @@ def run_photo_edit(
 
 def show_progress_header():
     """
-    Back 버튼과 진행 단계를 표시합니다.
+    상단 Back 버튼과 진행 단계를 표시합니다.
     """
 
     (
@@ -603,13 +645,123 @@ def show_page_header():
     )
 
 
-def show_background_options():
+def show_solid_color_options():
     """
-    배경 변경 옵션을 표시합니다.
+    원형 색상 Swatch와 추천 색상을 표시합니다.
     """
 
-    st.markdown(
-        "#### Background"
+    recommended_color_name = (
+        get_recommended_color_name()
+    )
+
+    personal_color_season = (
+        get_personal_color_season()
+    )
+
+    render_html(
+        f"""
+        <div class="photo-editor-color-header">
+            <span>Recommended colors</span>
+
+            <small>
+                Based on {personal_color_season or "your photo"}
+            </small>
+        </div>
+        """
+    )
+
+    color_names = list(
+        SOLID_COLOR_OPTIONS.keys()
+    )
+
+    color_columns = st.columns(
+        len(color_names)
+    )
+
+    for column, color_name in zip(
+        color_columns,
+        color_names
+    ):
+        hex_color = SOLID_COLOR_OPTIONS[
+            color_name
+        ]
+
+        is_selected = (
+            st.session_state.get(
+                "photo_editor_solid_color_name"
+            )
+            == color_name
+        )
+
+        is_recommended = (
+            color_name
+            == recommended_color_name
+        )
+
+        key_suffix = (
+            color_name.lower()
+            .replace(" ", "_")
+        )
+
+        with column:
+            button_text = (
+                "✓"
+                if is_selected
+                else ""
+            )
+
+            if st.button(
+                button_text,
+                key=(
+                    "photo_editor_color_"
+                    f"{key_suffix}"
+                ),
+                use_container_width=True
+            ):
+                st.session_state[
+                    "photo_editor_solid_color_name"
+                ] = color_name
+
+                st.rerun()
+
+            recommended_html = (
+                '<span class="recommended-badge">'
+                'Recommended'
+                '</span>'
+                if is_recommended
+                else ""
+            )
+
+            render_html(
+                f"""
+                <div class="photo-editor-color-label">
+                    <span>{color_name}</span>
+                    {recommended_html}
+                </div>
+                """
+            )
+
+    selected_color_name = st.session_state.get(
+        "photo_editor_solid_color_name",
+        recommended_color_name
+    )
+
+    return SOLID_COLOR_OPTIONS[
+        selected_color_name
+    ]
+
+
+def show_background_options():
+    """
+    Background 카드 옵션과 단색 추천색을 표시합니다.
+    """
+
+    render_html(
+        """
+        <div class="photo-editor-section-title">
+            Background
+        </div>
+        """
     )
 
     selected_background = st.radio(
@@ -622,43 +774,8 @@ def show_background_options():
     selected_solid_color = None
 
     if selected_background == "Solid Color":
-        selected_color_name = st.radio(
-            "Solid background color",
-            options=list(
-                SOLID_COLOR_OPTIONS.keys()
-            ),
-            horizontal=True,
-            key="photo_editor_solid_color_name",
-            label_visibility="collapsed"
-        )
-
         selected_solid_color = (
-            SOLID_COLOR_OPTIONS[
-                selected_color_name
-            ]
-        )
-
-        render_html(
-            f"""
-            <div class="photo-editor-selected-color">
-                Selected color:
-
-                <span
-                    style="
-                        display:inline-block;
-                        width:15px;
-                        height:15px;
-                        margin-left:7px;
-                        border-radius:50%;
-                        border:1px solid #d5d1df;
-                        background:{selected_solid_color};
-                        vertical-align:middle;
-                    "
-                ></span>
-
-                {selected_solid_color}
-            </div>
-            """
+            show_solid_color_options()
         )
 
     return (
@@ -669,11 +786,15 @@ def show_background_options():
 
 def show_adjustment_options():
     """
-    밝기, 대비, 채도, 선명도 옵션을 표시합니다.
+    이미지 보정 슬라이더를 표시합니다.
     """
 
-    st.markdown(
-        "#### Adjustments"
+    render_html(
+        """
+        <div class="photo-editor-adjustments-title">
+            Adjustments
+        </div>
+        """
     )
 
     st.slider(
@@ -758,11 +879,9 @@ def show_photo_editor_page():
             gap="large"
         )
 
-        # 왼쪽 이미지 자리를 먼저 생성합니다.
         with image_column:
             image_placeholder = st.empty()
 
-        # 오른쪽 Background 옵션
         with option_column:
             (
                 selected_background,
@@ -777,7 +896,6 @@ def show_photo_editor_page():
             show_adjustment_options()
         )
 
-        # 현재 선택된 옵션으로 편집 결과를 생성합니다.
         preview_result = run_photo_edit(
             original_image=original_image,
             selected_background=selected_background,
@@ -805,16 +923,13 @@ def show_photo_editor_page():
         else:
             preview_image = original_image
 
-            error_message = preview_result.get(
+            st.session_state[
+                "photo_editor_error"
+            ] = preview_result.get(
                 "message",
                 "Preview could not be generated."
             )
 
-            st.session_state[
-                "photo_editor_error"
-            ] = error_message
-
-        # 왼쪽 영역에 현재 편집 결과를 표시합니다.
         image_placeholder.image(
             preview_image,
             use_container_width=True

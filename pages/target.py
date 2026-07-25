@@ -5,6 +5,10 @@ import streamlit as st
 from utils.navigation import go_to_page
 
 
+TOTAL_STEPS = 7
+CURRENT_STEP = 1
+
+
 PERSONA_NAMES = [
     "Professional",
     "Confident",
@@ -187,7 +191,6 @@ def initialize_slider_values():
     ):
         saved_values = {}
 
-    # 이전 버전의 Persona 이름을 Creative로 이전
     if "Creative" not in saved_values:
         if "Warm" in saved_values:
             saved_values["Creative"] = (
@@ -294,7 +297,6 @@ def rebalance_slider_values(
         other_values.values()
     )
 
-    # 나머지 항목이 모두 0이면 균등 분배
     if other_sum <= 0:
         base_value = (
             remaining_total
@@ -546,9 +548,56 @@ def build_persona_legend(
     )
 
 
+def build_progress_html():
+    """
+    현재 단계에 맞춰 1~7단계 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span class="target-progress-dot {state_class}">
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span class="target-progress-line {line_class}">
+                </span>
+                """
+            )
+
+    return "".join(
+        progress_parts
+    )
+
+
 def show_progress_header():
     """
-    Back 버튼과 단계 표시를 렌더링합니다.
+    Back 버튼과 1~7단계 진행 표시를 렌더링합니다.
     """
 
     (
@@ -556,15 +605,14 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.2, 4.2, 1.2],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
     with back_column:
         if st.button(
             "‹ Back",
-            key="target_top_back",
-            use_container_width=True
+            key="target_top_back"
         ):
             go_to_page(
                 "service_intro"
@@ -572,17 +620,9 @@ def show_progress_header():
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="target-progress">
-                <span class="target-progress-dot active">1</span>
-                <span class="target-progress-line"></span>
-                <span class="target-progress-dot">2</span>
-                <span class="target-progress-line"></span>
-                <span class="target-progress-dot">3</span>
-                <span class="target-progress-line"></span>
-                <span class="target-progress-dot">4</span>
-                <span class="target-progress-line"></span>
-                <span class="target-progress-dot">5</span>
+                {build_progress_html()}
             </div>
             """
         )
@@ -810,11 +850,8 @@ def show_target_page():
         show_progress_header()
         show_page_header()
 
-        slider_values = (
-            show_persona_sliders()
-        )
+        show_persona_sliders()
 
-        # callback 실행 후 session_state의 최신 값을 다시 읽습니다.
         persona_values = {
             persona_name: clamp_slider_value(
                 st.session_state.get(
@@ -827,7 +864,6 @@ def show_target_page():
             for persona_name in PERSONA_NAMES
         }
 
-        # 안전장치: 합계가 100이 아닌 경우 재정규화
         if sum(
             persona_values.values()
         ) != 100:

@@ -26,6 +26,10 @@ from analysis.color_analyzer import (
 from utils.navigation import go_to_page
 
 
+TOTAL_STEPS = 7
+CURRENT_STEP = 6
+
+
 PERSONA_AXES = [
     "Professional",
     "Confident",
@@ -113,6 +117,57 @@ def render_html(html_content):
     st.markdown(
         clean_html(html_content),
         unsafe_allow_html=True
+    )
+
+
+def build_progress_html():
+    """
+    현재 페이지 단계에 맞춰
+    1~7 진행 표시 HTML을 생성합니다.
+    """
+
+    progress_parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
+    ):
+        if step < CURRENT_STEP:
+            state_class = "completed"
+
+        elif step == CURRENT_STEP:
+            state_class = "active"
+
+        else:
+            state_class = ""
+
+        progress_parts.append(
+            f"""
+            <span
+                class="match-report-progress-dot {state_class}"
+            >
+                {step}
+            </span>
+            """
+        )
+
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            progress_parts.append(
+                f"""
+                <span
+                    class="match-report-progress-line {line_class}"
+                ></span>
+                """
+            )
+
+    return "".join(
+        progress_parts
     )
 
 
@@ -221,7 +276,9 @@ def get_selected_photo_data():
         )
 
     try:
-        selected_index = int(selected_index)
+        selected_index = int(
+            selected_index
+        )
 
     except (TypeError, ValueError):
         selected_index = 0
@@ -265,7 +322,9 @@ def get_selected_photo_data():
         )
 
         try:
-            image_index = int(image_index)
+            image_index = int(
+                image_index
+            )
 
         except (TypeError, ValueError):
             image_index = fallback_index
@@ -274,7 +333,6 @@ def get_selected_photo_data():
             selected_analysis = result
             break
 
-    # 사진이 한 장뿐인 경우 전체 결과를 보조적으로 사용합니다.
     if selected_analysis is None:
         selected_analysis = analysis_result
 
@@ -464,12 +522,15 @@ def measure_image_quality(
     center_y_start = int(
         height * 0.18
     )
+
     center_y_end = int(
         height * 0.82
     )
+
     center_x_start = int(
         width * 0.22
     )
+
     center_x_end = int(
         width * 0.78
     )
@@ -627,10 +688,6 @@ def generate_strengths_and_improvements(
         "Background Complexity"
     ]
 
-    # =========================
-    # Strengths
-    # =========================
-
     if face_centering >= 72:
         add_unique_candidate(
             strengths,
@@ -704,10 +761,6 @@ def generate_strengths_and_improvements(
                     "your selected target"
                 )
             )
-
-    # =========================
-    # Areas to Improve
-    # =========================
 
     if face_centering < 62:
         add_unique_candidate(
@@ -787,15 +840,13 @@ def generate_strengths_and_improvements(
                 ]
             )
 
-    # Usage Context에 따른 추가 판단
     if usage_context in {
         "professional_profile",
         "resume"
     }:
-        if (
-            axis_alignment["Professional"]
-            < 78
-        ):
+        if axis_alignment[
+            "Professional"
+        ] < 78:
             add_unique_candidate(
                 improvements,
                 80,
@@ -806,10 +857,9 @@ def generate_strengths_and_improvements(
             )
 
     elif usage_context == "networking":
-        if (
-            axis_alignment["Approachable"]
-            < 78
-        ):
+        if axis_alignment[
+            "Approachable"
+        ] < 78:
             add_unique_candidate(
                 improvements,
                 80,
@@ -820,10 +870,9 @@ def generate_strengths_and_improvements(
             )
 
     elif usage_context == "creator":
-        if (
-            axis_alignment["Creative"]
-            < 78
-        ):
+        if axis_alignment[
+            "Creative"
+        ] < 78:
             add_unique_candidate(
                 improvements,
                 80,
@@ -977,11 +1026,9 @@ def analyze_selected_personal_color(
 
     result = {
         "season": season,
-        "colors": (
-            SEASON_PALETTES.get(
-                season,
-                []
-            )
+        "colors": SEASON_PALETTES.get(
+            season,
+            []
         ),
         "raw_result": raw_result
     }
@@ -1074,7 +1121,9 @@ def build_alignment_html(
             """
         )
 
-    return "".join(rows)
+    return "".join(
+        rows
+    )
 
 
 def build_feedback_html(
@@ -1085,7 +1134,11 @@ def build_feedback_html(
     Strengths 또는 Areas to Improve 목록 HTML을 생성합니다.
     """
 
-    icon = "✓" if positive else "×"
+    icon = (
+        "✓"
+        if positive
+        else "×"
+    )
 
     item_class = (
         "positive"
@@ -1125,22 +1178,45 @@ def build_color_swatches_html(
 
 def show_page_header():
     """
-    Back 버튼과 페이지 제목을 표시합니다.
+    Back 버튼, 1~7 진행 상태,
+    페이지 제목을 표시합니다.
     """
 
-    if st.button(
-        "‹ Back",
-        key="match_report_back"
-    ):
-        go_to_page(
-            "photo_comparison"
+    (
+        back_column,
+        progress_column,
+        empty_column
+    ) = st.columns(
+        [1.05, 5.4, 1.05],
+        vertical_alignment="center"
+    )
+
+    with back_column:
+        if st.button(
+            "‹ Back",
+            key="match_report_back"
+        ):
+            go_to_page(
+                "photo_comparison"
+            )
+
+    with progress_column:
+        render_html(
+            f"""
+            <div class="match-report-progress">
+                {build_progress_html()}
+            </div>
+            """
         )
+
+    with empty_column:
+        st.empty()
 
     render_html(
         """
         <div class="match-report-header">
             <div class="match-report-title">
-                Your Image Match Report
+                Step 6. Your Image Match Report
             </div>
 
             <div class="match-report-description">
@@ -1156,277 +1232,294 @@ def show_match_report_page():
     Image Match Report 페이지를 표시합니다.
     """
 
-    show_page_header()
-
-    selected_photo_data = (
-        get_selected_photo_data()
+    _, content_column, _ = st.columns(
+        [0.45, 5.1, 0.45]
     )
 
-    target_persona = (
-        get_target_persona()
-    )
+    with content_column:
+        show_page_header()
 
-    if (
-        selected_photo_data is None
-        or target_persona is None
-    ):
-        st.error(
-            "The selected photo or target persona "
-            "could not be found."
+        selected_photo_data = (
+            get_selected_photo_data()
         )
 
-        if st.button(
-            "Return to Upload",
-            type="primary",
-            use_container_width=True,
-            key="match_report_return_upload"
+        target_persona = (
+            get_target_persona()
+        )
+
+        if (
+            selected_photo_data is None
+            or target_persona is None
         ):
-            go_to_page("upload")
+            st.error(
+                "The selected photo or target persona "
+                "could not be found."
+            )
 
-        return
+            if st.button(
+                "Return to Upload",
+                type="primary",
+                use_container_width=True,
+                key="match_report_return_upload"
+            ):
+                go_to_page(
+                    "upload"
+                )
 
-    selected_image = selected_photo_data[
-        "image"
-    ]
+            return
 
-    selected_index = selected_photo_data[
-        "image_index"
-    ]
+        selected_image = selected_photo_data[
+            "image"
+        ]
 
-    selected_analysis = selected_photo_data[
-        "analysis"
-    ]
+        selected_index = selected_photo_data[
+            "image_index"
+        ]
 
-    detected_persona = extract_selected_scores(
-        selected_analysis
-    )
+        selected_analysis = selected_photo_data[
+            "analysis"
+        ]
 
-    if detected_persona is None:
-        st.error(
-            "Persona scores for the selected photo "
-            "could not be found."
-        )
-
-        return
-
-    features = selected_analysis.get(
-        "features",
-        {}
-    )
-
-    usage_context = st.session_state.get(
-        "usage_context",
-        "other"
-    )
-
-    axis_alignment = (
-        calculate_axis_alignment(
-            detected_persona=detected_persona,
-            target_persona=target_persona
-        )
-    )
-
-    match_score = (
-        calculate_overall_match_score(
-            detected_persona=detected_persona,
-            target_persona=target_persona
-        )
-    )
-
-    match_label, match_message = (
-        get_match_label(
-            match_score
-        )
-    )
-
-    image_quality = measure_image_quality(
-        selected_image
-    )
-
-    strengths, improvements = (
-        generate_strengths_and_improvements(
-            features=features,
-            image_quality=image_quality,
-            target_persona=target_persona,
-            detected_persona=detected_persona,
-            axis_alignment=axis_alignment,
-            usage_context=usage_context
-        )
-    )
-
-    color_result = (
-        analyze_selected_personal_color(
-            selected_image=selected_image,
-            selected_index=selected_index
-        )
-    )
-
-    # 이후 편집 페이지에서도 사용할 수 있도록 저장합니다.
-    st.session_state[
-        "selected_photo_match_score"
-    ] = match_score
-
-    st.session_state[
-        "selected_photo_alignment"
-    ] = axis_alignment
-
-    st.session_state[
-        "selected_photo_quality"
-    ] = image_quality
-
-    st.session_state[
-        "match_report_strengths"
-    ] = strengths
-
-    st.session_state[
-        "match_report_improvements"
-    ] = improvements
-
-    alignment_html = build_alignment_html(
-        detected_persona=detected_persona,
-        target_persona=target_persona,
-        axis_alignment=axis_alignment
-    )
-
-    render_html(
-        f"""
-        <div class="match-report-main-grid">
-            <div class="match-score-card">
-                <div class="match-card-title">
-                    Overall Match Score
-                </div>
-
-                <div class="match-score-number">
-                    {match_score}%
-                </div>
-
-                <div class="match-score-label">
-                    {match_label}
-                </div>
-
-                <div class="match-score-message">
-                    {match_message}
-                </div>
-            </div>
-
-            <div class="match-alignment-card">
-                <div class="match-card-title">
-                    Persona Alignment
-                </div>
-
-                <div class="match-alignment-list">
-                    {alignment_html}
-                </div>
-            </div>
-        </div>
-        """
-    )
-
-    strengths_html = build_feedback_html(
-        strengths,
-        positive=True
-    )
-
-    improvements_html = build_feedback_html(
-        improvements,
-        positive=False
-    )
-
-    render_html(
-        f"""
-        <div class="match-feedback-grid">
-            <div class="match-feedback-card">
-                <div class="match-card-title">
-                    Strengths
-                </div>
-
-                <div class="match-feedback-list">
-                    {strengths_html}
-                </div>
-            </div>
-
-            <div class="match-feedback-card">
-                <div class="match-card-title">
-                    Areas to Improve
-                </div>
-
-                <div class="match-feedback-list">
-                    {improvements_html}
-                </div>
-            </div>
-        </div>
-        """
-    )
-
-    season = color_result.get(
-        "season"
-    )
-
-    colors = color_result.get(
-        "colors",
-        []
-    )
-
-    if season and colors:
-        swatches_html = (
-            build_color_swatches_html(
-                colors
+        detected_persona = (
+            extract_selected_scores(
+                selected_analysis
             )
         )
 
-        color_description = (
-            f"{season} colors are recommended "
-            "based on the detected skin-tone features."
+        if detected_persona is None:
+            st.error(
+                "Persona scores for the selected photo "
+                "could not be found."
+            )
+
+            return
+
+        features = selected_analysis.get(
+            "features",
+            {}
         )
 
-    else:
-        swatches_html = ""
-        color_description = (
-            "A reliable personal color result could "
-            "not be calculated from this photo."
+        usage_context = st.session_state.get(
+            "usage_context",
+            "other"
         )
 
-    render_html(
-        f"""
-        <div class="match-color-card">
-            <div class="match-card-title">
-                Color Recommendation
-            </div>
-
-            <div class="match-color-description">
-                {color_description}
-            </div>
-
-            <div class="match-color-swatches">
-                {swatches_html}
-            </div>
-        </div>
-        """
-    )
-
-    render_html(
-        """
-        <div class="match-report-notice">
-            This report does not evaluate the person's actual
-            personality, ability, intelligence, or suitability
-            for a job. It only compares visual features in the
-            selected photo with the image goal chosen by the user.
-            Personal color results are also visual estimates and
-            may vary depending on lighting and camera conditions.
-        </div>
-        """
-    )
-
-    render_html(
-        '<div class="match-report-button-space"></div>'
-    )
-
-    if st.button(
-        "Continue to Editing →",
-        type="primary",
-        use_container_width=True,
-        key="match_report_continue_button"
-    ):
-        go_to_page(
-            "photo_editor"
+        axis_alignment = (
+            calculate_axis_alignment(
+                detected_persona=detected_persona,
+                target_persona=target_persona
+            )
         )
+
+        match_score = (
+            calculate_overall_match_score(
+                detected_persona=detected_persona,
+                target_persona=target_persona
+            )
+        )
+
+        match_label, match_message = (
+            get_match_label(
+                match_score
+            )
+        )
+
+        image_quality = (
+            measure_image_quality(
+                selected_image
+            )
+        )
+
+        strengths, improvements = (
+            generate_strengths_and_improvements(
+                features=features,
+                image_quality=image_quality,
+                target_persona=target_persona,
+                detected_persona=detected_persona,
+                axis_alignment=axis_alignment,
+                usage_context=usage_context
+            )
+        )
+
+        color_result = (
+            analyze_selected_personal_color(
+                selected_image=selected_image,
+                selected_index=selected_index
+            )
+        )
+
+        st.session_state[
+            "selected_photo_match_score"
+        ] = match_score
+
+        st.session_state[
+            "selected_photo_alignment"
+        ] = axis_alignment
+
+        st.session_state[
+            "selected_photo_quality"
+        ] = image_quality
+
+        st.session_state[
+            "match_report_strengths"
+        ] = strengths
+
+        st.session_state[
+            "match_report_improvements"
+        ] = improvements
+
+        alignment_html = (
+            build_alignment_html(
+                detected_persona=detected_persona,
+                target_persona=target_persona,
+                axis_alignment=axis_alignment
+            )
+        )
+
+        render_html(
+            f"""
+            <div class="match-report-main-grid">
+                <div class="match-score-card">
+                    <div class="match-card-title">
+                        Overall Match Score
+                    </div>
+
+                    <div class="match-score-number">
+                        {match_score}%
+                    </div>
+
+                    <div class="match-score-label">
+                        {match_label}
+                    </div>
+
+                    <div class="match-score-message">
+                        {match_message}
+                    </div>
+                </div>
+
+                <div class="match-alignment-card">
+                    <div class="match-card-title">
+                        Persona Alignment
+                    </div>
+
+                    <div class="match-alignment-list">
+                        {alignment_html}
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+        strengths_html = (
+            build_feedback_html(
+                strengths,
+                positive=True
+            )
+        )
+
+        improvements_html = (
+            build_feedback_html(
+                improvements,
+                positive=False
+            )
+        )
+
+        render_html(
+            f"""
+            <div class="match-feedback-grid">
+                <div class="match-feedback-card">
+                    <div class="match-card-title">
+                        Strengths
+                    </div>
+
+                    <div class="match-feedback-list">
+                        {strengths_html}
+                    </div>
+                </div>
+
+                <div class="match-feedback-card">
+                    <div class="match-card-title">
+                        Areas to Improve
+                    </div>
+
+                    <div class="match-feedback-list">
+                        {improvements_html}
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+        season = color_result.get(
+            "season"
+        )
+
+        colors = color_result.get(
+            "colors",
+            []
+        )
+
+        if season and colors:
+            swatches_html = (
+                build_color_swatches_html(
+                    colors
+                )
+            )
+
+            color_description = (
+                f"{season} colors are recommended "
+                "based on the detected skin-tone features."
+            )
+
+        else:
+            swatches_html = ""
+
+            color_description = (
+                "A reliable personal color result could "
+                "not be calculated from this photo."
+            )
+
+        render_html(
+            f"""
+            <div class="match-color-card">
+                <div class="match-card-title">
+                    Color Recommendation
+                </div>
+
+                <div class="match-color-description">
+                    {color_description}
+                </div>
+
+                <div class="match-color-swatches">
+                    {swatches_html}
+                </div>
+            </div>
+            """
+        )
+
+        render_html(
+            """
+            <div class="match-report-notice">
+                This report does not evaluate the person's actual
+                personality, ability, intelligence, or suitability
+                for a job. It only compares visual features in the
+                selected photo with the image goal chosen by the user.
+                Personal color results are also visual estimates and
+                may vary depending on lighting and camera conditions.
+            </div>
+            """
+        )
+
+        render_html(
+            '<div class="match-report-button-space"></div>'
+        )
+
+        if st.button(
+            "Continue to Editing →",
+            type="primary",
+            use_container_width=True,
+            key="match_report_continue_button"
+        ):
+            go_to_page(
+                "photo_editor"
+            )

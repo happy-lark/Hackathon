@@ -14,7 +14,7 @@ import streamlit as st
 from utils.navigation import go_to_page
 
 
-TOTAL_STEPS = 5
+TOTAL_STEPS = 7
 CURRENT_STEP = 2
 
 
@@ -26,6 +26,8 @@ CONTEXT_OPTIONS = [
         "description": (
             "LinkedIn, company profile, alumni page"
         ),
+        "color": "#6657E8",
+        "background": "#F0EEFF",
     },
     {
         "key": "portfolio",
@@ -34,6 +36,8 @@ CONTEXT_OPTIONS = [
         "description": (
             "Showcase your work and yourself"
         ),
+        "color": "#3978E9",
+        "background": "#EEF5FF",
     },
     {
         "key": "networking",
@@ -42,6 +46,8 @@ CONTEXT_OPTIONS = [
         "description": (
             "Events, meetups, speaker profile"
         ),
+        "color": "#8B5CF6",
+        "background": "#F5F0FF",
     },
     {
         "key": "creator",
@@ -50,12 +56,16 @@ CONTEXT_OPTIONS = [
         "description": (
             "YouTube, blog, social media"
         ),
+        "color": "#E48A32",
+        "background": "#FFF4E8",
     },
     {
         "key": "other",
         "icon": "⌁",
         "title": "Other",
         "description": "Other purposes",
+        "color": "#22A38A",
+        "background": "#ECFAF6",
     },
 ]
 
@@ -68,10 +78,7 @@ CONTEXT_OPTION_MAP = {
 
 def clean_html(html_content):
     """
-    HTML의 들여쓰기와 불필요한 줄바꿈을 제거합니다.
-
-    Streamlit에서 HTML이 코드 블록으로 표시되는
-    문제를 방지합니다.
+    HTML의 들여쓰기와 줄바꿈을 제거합니다.
     """
 
     return " ".join(
@@ -115,51 +122,60 @@ def initialize_context_state():
         "usage_context"
     ] = saved_context
 
-    radio_key = "context_usage_radio"
 
-    if radio_key not in st.session_state:
-        st.session_state[
-            radio_key
-        ] = saved_context
+def build_progress_html():
+    """
+    1~7단계 진행 표시 HTML을 생성합니다.
+    """
 
-    elif (
-        st.session_state[radio_key]
-        not in valid_option_keys
+    parts = []
+
+    for step in range(
+        1,
+        TOTAL_STEPS + 1
     ):
-        st.session_state[
-            radio_key
-        ] = saved_context
+        if step < CURRENT_STEP:
+            state_class = "completed"
 
+        elif step == CURRENT_STEP:
+            state_class = "active"
 
-def format_context_option(option_key):
-    """
-    Radio 항목에 표시할 아이콘과 제목을 반환합니다.
-    """
+        else:
+            state_class = ""
 
-    option = CONTEXT_OPTION_MAP[
-        option_key
-    ]
+        parts.append(
+            f"""
+            <span
+                class="context-progress-dot {state_class}"
+            >
+                {step}
+            </span>
+            """
+        )
 
-    return (
-        f'{option["icon"]}    '
-        f'{option["title"]}'
+        if step < TOTAL_STEPS:
+            line_class = (
+                "completed"
+                if step < CURRENT_STEP
+                else ""
+            )
+
+            parts.append(
+                f"""
+                <span
+                    class="context-progress-line {line_class}"
+                ></span>
+                """
+            )
+
+    return "".join(
+        parts
     )
-
-
-def get_context_captions():
-    """
-    각 Context 항목의 설명 목록을 반환합니다.
-    """
-
-    return [
-        option["description"]
-        for option in CONTEXT_OPTIONS
-    ]
 
 
 def show_progress_header():
     """
-    Back 버튼과 상단 5단계 진행 상태를 표시합니다.
+    Back 버튼과 7단계 진행 상태를 표시합니다.
     """
 
     (
@@ -167,7 +183,7 @@ def show_progress_header():
         progress_column,
         empty_column
     ) = st.columns(
-        [1.2, 4.2, 1.2],
+        [1.05, 5.4, 1.05],
         vertical_alignment="center"
     )
 
@@ -182,39 +198,9 @@ def show_progress_header():
 
     with progress_column:
         render_html(
-            """
+            f"""
             <div class="context-progress">
-                <span class="context-progress-dot completed">
-                    1
-                </span>
-
-                <span class="context-progress-line completed">
-                </span>
-
-                <span class="context-progress-dot active">
-                    2
-                </span>
-
-                <span class="context-progress-line">
-                </span>
-
-                <span class="context-progress-dot">
-                    3
-                </span>
-
-                <span class="context-progress-line">
-                </span>
-
-                <span class="context-progress-dot">
-                    4
-                </span>
-
-                <span class="context-progress-line">
-                </span>
-
-                <span class="context-progress-dot">
-                    5
-                </span>
+                {build_progress_html()}
             </div>
             """
         )
@@ -243,29 +229,93 @@ def show_page_header():
     )
 
 
-def show_context_options():
+def render_context_card(
+    option
+):
     """
-    Usage Context 선택 카드를 표시하고
-    선택된 Context 키를 반환합니다.
+    하나의 Context 카드와 선택 버튼을 표시합니다.
     """
 
-    option_keys = [
-        option["key"]
-        for option in CONTEXT_OPTIONS
-    ]
-
-    selected_context = st.radio(
-        "Usage context",
-        options=option_keys,
-        format_func=format_context_option,
-        captions=get_context_captions(),
-        label_visibility="collapsed",
-        key="context_usage_radio"
+    is_selected = (
+        st.session_state.get(
+            "usage_context"
+        )
+        == option["key"]
     )
 
-    st.session_state[
+    selected_class = (
+        "selected"
+        if is_selected
+        else ""
+    )
+
+    check_html = (
+        """
+        <div class="context-card-check">
+            ✓
+        </div>
+        """
+        if is_selected
+        else ""
+    )
+
+    render_html(
+        f"""
+        <div class="context-card {selected_class}">
+            <div
+                class="context-card-icon"
+                style="
+                    color: {option["color"]};
+                    background: {option["background"]};
+                "
+            >
+                {option["icon"]}
+            </div>
+
+            <div class="context-card-text">
+                <div class="context-card-title">
+                    {option["title"]}
+                </div>
+
+                <div class="context-card-description">
+                    {option["description"]}
+                </div>
+            </div>
+
+            {check_html}
+        </div>
+        """
+    )
+
+    button_key = (
+        f'context_card_{option["key"]}'
+    )
+
+    if st.button(
+        option["title"],
+        key=button_key,
+        use_container_width=True
+    ):
+        st.session_state[
+            "usage_context"
+        ] = option["key"]
+
+        st.rerun()
+
+
+def show_context_options():
+    """
+    Usage Context 카드 목록을 표시합니다.
+    """
+
+    for option in CONTEXT_OPTIONS:
+        render_context_card(
+            option
+        )
+
+    selected_context = st.session_state.get(
         "usage_context"
-    ] = selected_context
+    )
 
     selected_option = CONTEXT_OPTION_MAP[
         selected_context
@@ -276,11 +326,9 @@ def show_context_options():
     ] = {
         "key": selected_option["key"],
         "title": selected_option["title"],
-        "description": (
-            selected_option[
-                "description"
-            ]
-        )
+        "description": selected_option[
+            "description"
+        ]
     }
 
     return selected_context
@@ -288,8 +336,8 @@ def show_context_options():
 
 def clear_downstream_results():
     """
-    Usage Context가 변경된 후 기존 분석 결과가
-    잘못 재사용되지 않도록 제거합니다.
+    Usage Context가 변경된 경우
+    기존 분석 및 편집 결과를 제거합니다.
     """
 
     keys_to_remove = [
@@ -300,11 +348,20 @@ def clear_downstream_results():
         "best_photo_index",
         "selected_photo_index",
         "best_match_score",
+        "selected_photo_match_score",
+        "selected_photo_alignment",
+        "selected_photo_quality",
+        "match_report_strengths",
+        "match_report_improvements",
+        "match_report_color_result",
+        "match_report_color_index",
         "optimized_image",
+        "edited_image",
         "original_match_score",
         "optimized_match_score",
         "improvement_summary",
-        "improvement_report"
+        "improvement_report",
+        "photo_editor_preview_result"
     ]
 
     for key in keys_to_remove:
@@ -322,28 +379,37 @@ def show_context_page():
     initialize_context_state()
 
     _, content_column, _ = st.columns(
-        [0.6, 5, 0.6]
+        [0.45, 5.1, 0.45]
     )
 
     with content_column:
         show_progress_header()
         show_page_header()
 
-        selected_context = (
-            show_context_options()
+        (
+            option_left_space,
+            option_column,
+            option_right_space
+        ) = st.columns(
+            [0.45, 4.4, 0.45]
         )
 
-        render_html(
-            '<div class="context-continue-space"></div>'
-        )
+        with option_column:
+            selected_context = (
+                show_context_options()
+            )
 
-        continue_clicked = st.button(
-            "Continue",
-            type="primary",
-            use_container_width=True,
-            key="context_continue_button",
-            disabled=not selected_context
-        )
+            render_html(
+                '<div class="context-continue-space"></div>'
+            )
+
+            continue_clicked = st.button(
+                "Continue",
+                type="primary",
+                use_container_width=True,
+                key="context_continue_button",
+                disabled=not selected_context
+            )
 
         if continue_clicked:
             previous_context = (

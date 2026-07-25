@@ -23,21 +23,21 @@
 
     flex-shrink: 0;
 
-    width: 31px;
-    height: 31px;
+    width: 28px;
+    height: 28px;
 
     border-radius: 50%;
 
     background-color: #f1f0f5;
     color: #8d8a99;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 750;
 }
 
 .comparison-progress-dot.completed {
-    background-color: #f0edfb;
-    color: #777389;
+    background-color: #efecfb;
+    color: #6657df;
 }
 
 .comparison-progress-dot.active {
@@ -54,16 +54,16 @@
 }
 
 .comparison-progress-line {
-    width: 29px;
+    width: 20px;
     height: 2px;
 
-    margin: 0 5px;
+    margin: 0 4px;
 
     background-color: #e8e6ed;
 }
 
 .comparison-progress-line.completed {
-    background-color: #ddd8ef;
+    background-color: #d8d1f4;
 }
 
 
@@ -398,16 +398,16 @@
 
 @media (max-width: 700px) {
     .comparison-progress-line {
-        width: 12px;
+        width: 8px;
 
-        margin: 0 3px;
+        margin: 0 2px;
     }
 
     .comparison-progress-dot {
-        width: 28px;
-        height: 28px;
+        width: 25px;
+        height: 25px;
 
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .comparison-page-header {
@@ -474,5 +474,49 @@
         grid-column: 3;
 
         text-align: left;
+    }
+}
+
+
+/* ========================================
+   매우 작은 화면
+======================================== */
+
+@media (max-width: 480px) {
+    .comparison-progress-line {
+        width: 4px;
+
+        margin: 0 1px;
+    }
+
+    .comparison-progress-dot {
+        width: 23px;
+        height: 23px;
+
+        font-size: 10px;
+    }
+
+    .comparison-best-card {
+        grid-template-columns:
+            32px
+            82px
+            minmax(0, 1fr);
+
+        gap: 9px;
+
+        padding: 13px;
+    }
+
+    .comparison-best-image-wrapper {
+        width: 82px;
+        height: 110px;
+    }
+
+    .comparison-photo-title {
+        font-size: 16px;
+    }
+
+    .comparison-feedback-item {
+        font-size: 11px;
     }
 }
