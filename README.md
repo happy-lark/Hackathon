@@ -27,5 +27,5 @@
    - Fine Tuning: Adjust brightness, contrast, saturation, and sharpness.
 
 5. Optimized Export
-- Download the optimized image in 2 formats*: Original aspect ratio or Circular crop profile.
+   - Download the optimized image in 2 formats*: Original aspect ratio or Circular crop profile.
 
