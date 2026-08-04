@@ -3,7 +3,7 @@
 - 3rd Place at USC Conference Hackathon (July 2026) 
 
 ## ⭐Summary
-- PersonaLAB is an AI-powered image optimization service that anaylzes user photos based on a target persona and provides feedback
+- PersonaLAB is an AI-powered image optimization service that analyzes user photos based on a target persona and provides feedback
 - Offers personalized image editing capablities 
 
 ## 🛠️Tech Stack 
